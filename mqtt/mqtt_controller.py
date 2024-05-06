@@ -4,7 +4,7 @@ import paho.mqtt.client as mqtt
 import ssl
 
 
-from constants import MQTT_BROKER, MQTT_PORT, MQTT_TOPIC, CA_CERTIFICATE, CLIENT_CERTIFICATE, CLIENT_PRIVATE_KEY
+from utils.constants import MQTT_BROKER, MQTT_PORT, MQTT_TOPIC, CA_CERTIFICATE, CLIENT_CERTIFICATE, CLIENT_PRIVATE_KEY
 
 def on_message(client, userdata, msg):
     print(f"Received message: {msg.topic} {str(msg.payload)}")

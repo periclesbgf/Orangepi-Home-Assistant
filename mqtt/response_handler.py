@@ -1,4 +1,4 @@
-from constants import MQTT_TOPIC
+from utils.constants import MQTT_TOPIC
 
 # def handler(text):
 #     filepath, prompt_output = send_prompt(text)

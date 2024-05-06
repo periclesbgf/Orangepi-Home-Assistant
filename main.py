@@ -2,19 +2,19 @@ import socket
 import wave
 import numpy as np
 from tensorflow.keras import models
-from tf_helper import *
+from sr.tf_helper import *
 import os
 from threading import Thread
 from concurrent.futures import ThreadPoolExecutor
 import speech_recognition as sr
 from pydub import AudioSegment
-from record_audio import record_audio
+from sr.record_audio import record_audio
 from gtts import gTTS
 
-from constants import commands, MQTT_TOPIC
-from mqtt_controller import mqtt_publish, initialize_mqtt_client
+from utils.constants import commands, MQTT_TOPIC
+from mqtt.mqtt_controller import mqtt_publish, initialize_mqtt_client
 
-from response_handler import handler
+#from mqtt.response_handler import handler
 
 #from llm import send_prompt
 
