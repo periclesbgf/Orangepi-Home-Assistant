@@ -14,8 +14,6 @@ def get_audio():
     with sr.Microphone() as source:
         print('entrei')
         r.pause_threshold = 1
-        # wait for a second to let the recognizer adjust the
-        # energy threshold based on the surrounding noise level
         r.adjust_for_ambient_noise(source, duration=1)
         audio = r.listen(source)
         said = ""
@@ -36,18 +34,18 @@ pygame.mixer.init()
 def speak(text):
     tts = gTTS(text=text, lang='pt')
     filename = "voice.mp3"
-    
+
     try:
         os.remove(filename)
     except OSError:
         pass
-    
+
     tts.save(filename)
-    
+
     # usar o mixer do pygame para reproduzir o som
     pygame.mixer.music.load(filename)
     pygame.mixer.music.play()
-    
+
     # aguardar o som terminar de ser reproduzido
     while pygame.mixer.music.get_busy():
         continue

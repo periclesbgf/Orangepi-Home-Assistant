@@ -1,130 +1,32 @@
 import socket
 import wave
-import time
 import numpy as np
 from tensorflow.keras import models
 from tf_helper import *
-import random
-import string
 import os
 from threading import Thread
 from concurrent.futures import ThreadPoolExecutor
 import speech_recognition as sr
-import threading
-from gtts import gTTS
-import ssl
-import paho.mqtt.client as mqtt
 from pydub import AudioSegment
-from paho.mqtt.client import CallbackAPIVersion
-from paho.mqtt.client import MQTTv311  # Asume-se MQTT versão 3.1.1
 from record_audio import record_audio
+
+from constants import commands
 
 #from llm import send_prompt
 
-
-
-commands = ['background', 'eden']
-
 loaded_model = models.load_model("model")
-
-#SERVER_IP = "192.168.1.12" # Your id: if windows ipconfig, linux: ifconfig
-SERVER_PORT = 12445 # Server port
-#ESP32_TCP_SERVER_IP = "192.168.1.15"  # Substitua pelo IP do servidor TCP da ESP32
-ESP32_TCP_SERVER_PORT_FOR = 12345  # Substitua pela porta do servidor TCP da ESP32
-RECEIVE_DURATION_SECONDS = 1
-RECEIVE_DURATION_SECONDS_R = 3
-RECEIVE_BUFFER_SIZE = 1024
-SEND_BUFFER_SIZE = 2048
-
-wav_file_path = "./reformated2.wav"
-
-MQTT_BROKER = "a34ypir054ngjb-ats.iot.us-east-2.amazonaws.com"
-MQTT_PORT = 8883
-MQTT_TOPIC = "topic/esp32/pub"
-CA_CERTIFICATE = "certs/AmazonRootCA1.pem"
-CLIENT_CERTIFICATE = "certs/client.crt"
-CLIENT_PRIVATE_KEY = "certs/client.key"
-
-def on_message(client, userdata, msg):
-    print(f"Received message: {msg.topic} {str(msg.payload)}")
-
-def on_connect(client, userdata, flags, rc, properties=None):
-    print(f"Connected with result code {rc}")
-    if rc == 0:
-        client.subscribe(MQTT_TOPIC)
-    else:
-        print(f"Failed to connect, return code {rc}\n")
-
-def mqtt_publish(message, topic):
-    client = mqtt.Client(callback_api_version=CallbackAPIVersion.VERSION2)  # Assumindo a utilização do protocolo MQTT v3.1.1
-
-    # Defina sua função on_connect aqui
-    client.on_connect = on_connect
-
-    # Configura a conexão TLS
-    client.tls_set(ca_certs=CA_CERTIFICATE,
-                   certfile=CLIENT_CERTIFICATE,
-                   keyfile=CLIENT_PRIVATE_KEY,
-                   tls_version=ssl.PROTOCOL_TLSv1_2)
-
-    # Conecta ao broker MQTT
-    client.connect(MQTT_BROKER, MQTT_PORT, 60)
-
-    # Inicia um loop em background para gerenciar a conexão
-    client.loop_start()
-
-    # Publica a mensagem e captura o resultado em info
-    info = client.publish(topic, message)
-
-    # Aguarda a conclusão do envio da mensagem
-    info.wait_for_publish()
-
-    # Log do resultado da publicação
-    print(f"Message published: MID={info.mid}, Granted QoS={info.rc}")
-
-    # Para a execução do loop e desconecta do broker
-    client.loop_stop()
-    client.disconnect()
-
-
-def initialize_mqtt_client():
-    client = mqtt.Client(callback_api_version=CallbackAPIVersion.VERSION2)
-
-    # Configure TLS connection
-    client.tls_set(ca_certs=CA_CERTIFICATE,
-                   certfile=CLIENT_CERTIFICATE,
-                   keyfile=CLIENT_PRIVATE_KEY,
-                   tls_version=mqtt.ssl.PROTOCOL_TLS)
-
-    # Assign event callbacks
-    client.on_connect = on_connect
-    client.on_message = on_message
-
-    # Parse MQTT_BROKER to remove "mqtts://" and extract the host
-    mqtt_broker_host = MQTT_BROKER.replace("mqtts://", "").split(":")[0]
-
-    # Connect to MQTT broker
-    client.connect(mqtt_broker_host, MQTT_PORT, 60)
-
-    return client
 
 def get_local_ip():
     try:
         # Cria um socket DGRAM
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # Não é necessário enviar dados, então apenas conecte ao endereço externo
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
         s.close()
     except Exception as e:
         print(f"Erro ao obter o endereço IP local: {e}")
-        ip = "127.0.0.1"  # Fallback para localhost
+        ip = "127.0.0.1"
     return ip
-
-# Use a função para definir SERVER_IP
-SERVER_IP = get_local_ip()
-print(f"O IP do servidor foi definido para {SERVER_IP}")
-
 
 def save_predict_delete(data, filename):
     save_audio_data_to_wav(data, filename)
@@ -165,7 +67,6 @@ def delete_file(file):
         os.remove(file)
     except OSError as e:
         print(f"Erro ao excluir o arquivo {file}: {e}")
-
 
 
 # def transcrever_audio(arquivo_wav):
