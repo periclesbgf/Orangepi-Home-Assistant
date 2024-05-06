@@ -10,7 +10,8 @@ import speech_recognition as sr
 from pydub import AudioSegment
 from record_audio import record_audio
 
-from constants import commands
+from constants import commands, MQTT_TOPIC
+from mqtt_controller import mqtt_publish, initialize_mqtt_client
 
 #from llm import send_prompt
 
