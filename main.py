@@ -1,36 +1,22 @@
-import socket
 import wave
 import numpy as np
 from tensorflow.keras import models
 from sr.tf_helper import *
 import os
-from threading import Thread
-from concurrent.futures import ThreadPoolExecutor
-import speech_recognition as sr
-from pydub import AudioSegment
 from sr.record_audio import record_audio
-from gtts import gTTS
+import whisper
+import openai
 
-from utils.constants import commands, MQTT_TOPIC
-from mqtt.mqtt_controller import mqtt_publish, initialize_mqtt_client
+from utils.utils import get_local_ip
+from utils.constants import commands
+from mqtt.mqtt_controller import initialize_mqtt_client
 
-#from mqtt.response_handler import handler
+from mqtt.response_handler import handler
 
-#from llm import send_prompt
 
 loaded_model = models.load_model("model")
 
-def get_local_ip():
-    try:
-        # Cria um socket DGRAM
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        ip = s.getsockname()[0]
-        s.close()
-    except Exception as e:
-        print(f"Erro ao obter o endereço IP local: {e}")
-        ip = "127.0.0.1"
-    return ip
+
 
 def save_predict_delete(data, filename):
     save_audio_data_to_wav(data, filename)
@@ -44,19 +30,9 @@ def save_audio_data_to_wav(data, filename):
             audio_file.setsampwidth(2)   # 16 bits
             audio_file.setframerate(16000)  # Exemplo de taxa de amostragem
             audio_file.writeframes(data)
+        return filename
     except Exception as e:
         print(f"Erro ao salvar os dados de áudio como WAV: {e}")
-
-# def predict_mic(file):
-#     audio = record_audio_from_file(file)
-#     spec = preprocess_audiobuffer(audio)
-#     prediction = loaded_model(spec)
-#     label_pred = np.argmax(prediction, axis=1)
-#     command = commands[label_pred[0]]
-#     if command == 'eden':
-#         activation_word = b'eden'
-#         connect_to_esp32_tcp_server(activation_word)
-#     print("Predicted:", command)
 
 def predict_mic():
     audio = record_audio()
@@ -64,6 +40,19 @@ def predict_mic():
     prediction = loaded_model(spec)
     label_pred = np.argmax(prediction, axis=1)
     command = commands[label_pred[0]]
+    if command == 'eden':
+        print("Eden ativado")
+        audio = record_audio(duration=3)
+        filename = "audio.wav"
+        filename = save_audio_data_to_wav(audio, filename)
+        text = transcrever_audio(filename)
+
+        if text == "Não foi possível transcrever o áudio" or text == "":
+            print("Erro ao transcrever o áudio")
+            return
+        handler(text)
+        delete_file(filename)
+
     print("Predicted:", command)
 
 def delete_file(file):
@@ -72,49 +61,47 @@ def delete_file(file):
     except OSError as e:
         print(f"Erro ao excluir o arquivo {file}: {e}")
 
+def transcrever_audio(arquivo_wav):
+    # Carrega o modelo
+    model = whisper.load_model("base")
 
-# def transcrever_audio(arquivo_wav):
-#     recognizer = sr.Recognizer()
+    # Processa o arquivo de áudio e realiza a transcrição
+    result = model.transcribe(arquivo_wav, language="Portuguese")
 
-#     with sr.AudioFile(arquivo_wav) as source:
-#         audio = recognizer.record(source)
+    # Captura a transcrição do resultado
+    texto_transcrito = result["text"]
 
-#     try:
-#         texto_transcrito = recognizer.recognize_google(audio, language='pt-br')
-#         handler(texto_transcrito)
-#         return texto_transcrito
-#     except sr.UnknownValueError:
-#         return "Não foi possível transcrever o áudio"
-#     except sr.RequestError as e:
-#         return f"Erro na requisição para a API do Google: {e}"
+    # Você pode escolher manipular o texto ou passá-lo diretamente
+    return texto_transcrito.strip()
 
+def text_to_speech_wav(text, lang='pt-BR'):
 
+    # Solicita a síntese de fala
+    response = openai.Audio.create(
+        model="tts",                 # ou outro modelo disponível que você deseja usar
+        input=text,
+        output="audio/wav"           # Especifica o formato de áudio de saída
+    )
 
-def text_to_speech_wav(text, lang='pt-br'):
-    # Cria um objeto gTTS
-    tts = gTTS(text=text, lang=lang, slow=False)
-
-    # Gera um arquivo temporário mp3
-    temp_mp3 = "temp.mp3"
-    tts.save(temp_mp3)
-
-    # Converte o arquivo mp3 para wav
-    audio = AudioSegment.from_mp3(temp_mp3)
+    # Nome do arquivo de saída
     audio_file_wav = "speech.wav"
-    audio.export(audio_file_wav, format="wav")
 
-    # Remove o arquivo temporário mp3
-    os.remove(temp_mp3)
+    # Salva o arquivo de áudio
+    with open(audio_file_wav, 'wb') as out:
+        out.write(response['data'])
+        print(f"Arquivo '{audio_file_wav}' salvo com sucesso.")
 
-    print(f"Arquivo '{audio_file_wav}' salvo com sucesso.")
+    # Retorna o caminho do arquivo para possível uso posterior
+    return audio_file_wav
 
 
 if __name__ == "__main__":
+    openai.api_key = os.getenv("OPENAI_API_KEY")
     SERVER_IP = get_local_ip()
     print(f"O IP do servidor foi definido para {SERVER_IP}")
 
-    # client = initialize_mqtt_client()
-    # client.loop_start()
+    client = initialize_mqtt_client()
+    client.loop_start()
 
     # mqtt_publish("Hello MQTT!")
 

@@ -9,3 +9,4 @@ SpeechRecognition
 gtts
 openai
 paho-mqtt
+openai-whisper

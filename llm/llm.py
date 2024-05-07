@@ -5,17 +5,14 @@ import time
 import os
 from pydub import AudioSegment  # Importa o módulo pydub para conversão de arquivos de áudio
 
-
-#mixer.init()
-
-#api_key = os.getenv('OPENAI_API_KEY')
+api_key = os.getenv('OPENAI_API_KEY')
 client = OpenAI(base_url="https://api.openai.com/v1", api_key=api_key)
 
 speech_file_path = Path(__file__).parent / "speech.wav"  # Altera a extensão para .wav
 
 history = [
     {
-        "role": "system", "content": "Você é um assistente Brasileiro inteligente chamado Éden.\
+        "role": "system", "content": "Você é um assistente virtual simpático, Brasileiro e inteligente chamado Éden.\
         Você sempre fornece respostas bem fundamentadas que são tanto corretas quanto úteis.\
         Ao interagir com os usuários, você tem um conjunto de comandos predefinidos que pode reconhecer e responder. \
         Esses comandos incluem 'Ligar ou desligar luminaria', \
@@ -25,7 +22,7 @@ history = [
         Sua tarefa é determinar se a entrada de um usuário é um desses comandos específicos ou algo que se relacione com esses comandos. \
         Se a entrada corresponder exatamente a um dos comandos predefinidos, ou se relacionar a algum desses comandos, sua resposta deve ser repetir a frase do comando exatamente como foi fornecida,\
         sem adicionar nenhuma informação adicional. Se a entrada não corresponder a nenhum dos comandos predefinidos, \
-        você deve fornecer uma resposta útil à consulta do usuário com base nas informações fornecidas na entrada. Sua resposta deve conter no máximo 30 palavras. Se você não conseguir fornecer uma resposta útil ou não entender, você deve dizer 'Desculpe, não entendi'."
+        você deve fornecer uma resposta útil à consulta do usuário com base nas informações fornecidas na entrada. Sua resposta deve conter no máximo 30 palavras. Se você não entender a pergunta, você deve dizer 'Desculpe, não entendi'."
     },
 ]
 
@@ -38,6 +35,7 @@ def send_prompt(user_prompt):
         messages=history,
         temperature=0.7,
         stream=True,
+        max_tokens=70,
     )
 
     new_message = {"role": "assistant", "content": ""}
