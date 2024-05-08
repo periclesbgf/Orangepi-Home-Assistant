@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+import librosa
 
 
 # Set the seed value for experiment reproducibility.
@@ -32,20 +33,20 @@ def get_melspectrogram(waveform):
     return mel_spectrogram[..., tf.newaxis]  # Adiciona um novo eixo para manter a mesma estrutura
 
 
-def preprocess_audiobuffer(waveform):
-    """
-    waveform: ndarray of size (16000, )
+from scipy.signal import resample
 
-    output: Spectogram Tensor of size: (1, `height`, `width`, `channels`)
-    """
-    #  normalize from [-32768, 32767] to [-1, 1]
-    waveform =  waveform / 32768
+def preprocess_audiobuffer(waveform):
+    # Calcula o número de amostras após a reamostragem
+    num_samples = int(len(waveform) * 16000 / 44100)
+
+    # Reamostrar o waveform
+    waveform = resample(waveform, num_samples)
+
+    # Normaliza de [-32768, 32767] para [-1, 1]
+    waveform = waveform / 32768
 
     waveform = tf.convert_to_tensor(waveform, dtype=tf.float32)
-
     spectogram = get_melspectrogram(waveform)
-
-    # add one dimension
     spectogram = tf.expand_dims(spectogram, 0)
 
     return spectogram

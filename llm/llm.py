@@ -1,11 +1,12 @@
-# Chat with an intelligent assistant in your terminal
 from pathlib import Path
 from openai import OpenAI
 import time
 import os
-from pydub import AudioSegment  # Importa o módulo pydub para conversão de arquivos de áudio
+from pydub import AudioSegment
+from dotenv import load_dotenv
 
-api_key = os.getenv('OPENAI_API_KEY')
+load_dotenv()
+api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(base_url="https://api.openai.com/v1", api_key=api_key)
 
 speech_file_path = Path(__file__).parent / "speech.wav"  # Altera a extensão para .wav
@@ -31,7 +32,7 @@ def send_prompt(user_prompt):
     history.append({"role": "user", "content": user_prompt})
 
     completion = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4-turbo",
         messages=history,
         temperature=0.7,
         stream=True,
@@ -63,7 +64,8 @@ def send_prompt(user_prompt):
 
     # Converte o arquivo de mp3 para wav
     sound = AudioSegment.from_mp3(temp_path)
-    sound.export(speech_file_path, format="wav")
+    sound.export(speech_file_path, format="wav", parameters=["-ar", str(44100)])
+
 
     # Limpa o arquivo mp3 temporário
     os.remove(temp_path)

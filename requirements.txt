@@ -10,3 +10,5 @@ gtts
 openai
 paho-mqtt
 openai-whisper
+python-dotenv
+google-cloud-speech

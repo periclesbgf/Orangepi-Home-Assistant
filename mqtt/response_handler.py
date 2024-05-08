@@ -43,35 +43,32 @@ def handler(text):
         command = "0"
         mqtt_publish(command, "sala11/bomba")
     else:
-        play_audio(filename=filepath)
+        play_audio(filename=filepath, device_id=3)
 
-def play_audio(filename: str):
+def play_audio(filename: str, device_id: int):
     print(filename)
     filename = str(filename)
 
-    # Verifica se o arquivo existe
     if not os.path.exists(filename):
         print(f"Arquivo não encontrado: {filename}")
         return
 
     try:
-        # Abrir arquivo WAV
         wf = wave.open(filename, 'rb')
     except IOError as e:
         print(f"Erro ao abrir o arquivo: {e}")
         return
 
-    # Criar instância PyAudio
     p = pyaudio.PyAudio()
 
     try:
-        # Abrir stream baseado nas informações do arquivo WAV
+        # Configuração da stream de áudio com o dispositivo de saída especificado
         stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
-                        channels=wf.getnchannels(),
-                        rate=wf.getframerate(),
-                        output=True)
+                        channels=1,
+                        rate=44100,
+                        output=True,
+                        output_device_index=device_id)  # Adicionando o índice do dispositivo de saída
 
-        # Ler dados em blocos de 1024 frames
         data = wf.readframes(1024)
 
         while data:
@@ -80,7 +77,6 @@ def play_audio(filename: str):
     except Exception as e:
         print(f"Erro ao tocar o arquivo: {e}")
     finally:
-        # Finaliza o stream e libera os recursos
         if 'stream' in locals():
             stream.stop_stream()
             stream.close()
