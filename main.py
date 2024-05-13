@@ -52,10 +52,10 @@ def predict_mic():
 
     if command == 'eden':
         print("Eden ativado")
-        audio = record_audio(device_index=2, duration=3)
+        audio = record_audio(device_index=2, duration=4)
         filename = "audio.wav"
         filename = save_audio_data_to_wav(audio, filename)
-        text = transcrever_audio(filename)
+        text = transc(filename)
 
         if text == "Não foi possível transcrever o áudio" or text == "":
             print("Erro ao transcrever o áudio")
@@ -94,7 +94,7 @@ def transcrever_audio(arquivo_wav):
     if response.results:
         return response.results[0].alternatives[0].transcript
     else:
-        return "Nenhuma transcrição disponível."
+        return ""
 
 def text_to_speech_wav(text, lang='pt-BR'):
 
@@ -113,6 +113,14 @@ def text_to_speech_wav(text, lang='pt-BR'):
 
     return audio_file_wav
 
+def transc(audiofile):
+    audio_file = open(audiofile, "rb")
+    transcript = client_openai.audio.transcriptions.create(
+        model="whisper-1",
+        file=audio_file,
+        response_format="text"
+    )
+    return transcript
 
 if __name__ == "__main__":
 
@@ -133,3 +141,16 @@ if __name__ == "__main__":
 
     while True:
         predict_mic()
+#Input Device id  1  -  ahubhdmi: ahub_plat-i2s-hifi i2s-hifi-0 (hw:2,0)
+# Input Device id  2  -  USB PnP Sound Device: Audio (hw:3,0)
+# Input Device id  6  -  pulse
+# Input Device id  10  -  default
+# Output Device id  0  -  audiocodec: CDC PCM Codec-0 (hw:0,0)
+# Output Device id  1  -  ahubhdmi: ahub_plat-i2s-hifi i2s-hifi-0 (hw:2,0)
+# Output Device id  3  -  sysdefault
+# Output Device id  4  -  samplerate
+# Output Device id  5  -  speexrate
+# Output Device id  6  -  pulse
+# Output Device id  7  -  upmix
+# Output Device id  8  -  vdownmix
+# Output Device id  9  -  dmix

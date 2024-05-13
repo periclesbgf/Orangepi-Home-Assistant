@@ -13,7 +13,7 @@ speech_file_path = Path(__file__).parent / "speech.wav"  # Altera a extensão pa
 
 history = [
     {
-        "role": "system", "content": "Você é um assistente virtual simpático, Brasileiro e inteligente chamado Éden.\
+        "role": "system", "content": "Você é um assistente Brasileiro inteligente chamado Éden.\
         Você sempre fornece respostas bem fundamentadas que são tanto corretas quanto úteis.\
         Ao interagir com os usuários, você tem um conjunto de comandos predefinidos que pode reconhecer e responder. \
         Esses comandos incluem 'Ligar ou desligar luminaria', \
@@ -23,11 +23,12 @@ history = [
         Sua tarefa é determinar se a entrada de um usuário é um desses comandos específicos ou algo que se relacione com esses comandos. \
         Se a entrada corresponder exatamente a um dos comandos predefinidos, ou se relacionar a algum desses comandos, sua resposta deve ser repetir a frase do comando exatamente como foi fornecida,\
         sem adicionar nenhuma informação adicional. Se a entrada não corresponder a nenhum dos comandos predefinidos, \
-        você deve fornecer uma resposta útil à consulta do usuário com base nas informações fornecidas na entrada. Sua resposta deve conter no máximo 30 palavras. Se você não entender a pergunta, você deve dizer 'Desculpe, não entendi'."
+        você deve fornecer uma resposta útil à consulta do usuário com base nas informações fornecidas na entrada. Sua resposta deve conter no máximo 30 palavras. Se você não conseguir fornecer uma resposta útil ou não entender, você deve dizer 'Desculpe, não entendi'."
     },
 ]
 
 def send_prompt(user_prompt):
+    print("Enviando prompt")
     # Adiciona o prompt do usuário à história antes de fazer a chamada para a API
     history.append({"role": "user", "content": user_prompt})
 
@@ -41,21 +42,22 @@ def send_prompt(user_prompt):
 
     new_message = {"role": "assistant", "content": ""}
 
-    # Armazenando o output do modelo em uma variável antes de adicionar ao histórico
+    print("Esperando resposta")
     model_output = ""
     for chunk in completion:
         if chunk.choices[0].delta.content:
             model_output += chunk.choices[0].delta.content
-
+    print("Resposta recebida")
     new_message["content"] = model_output
 
     history.append(new_message)
-
+    print("Enviando requisicao de audio")
     response = client.audio.speech.create(
         model="tts-1",
         voice="nova",
         input=new_message["content"]
     )
+    print("Resposta de audio recebida")
 
     # Salva o conteúdo da resposta em um arquivo de áudio temporário no formato mp3
     temp_path = speech_file_path.with_suffix('.mp3')
@@ -65,6 +67,7 @@ def send_prompt(user_prompt):
     # Converte o arquivo de mp3 para wav
     sound = AudioSegment.from_mp3(temp_path)
     sound.export(speech_file_path, format="wav", parameters=["-ar", str(44100)])
+    print("Resposta convertida para áudio")
 
 
     # Limpa o arquivo mp3 temporário
@@ -76,4 +79,6 @@ def send_prompt(user_prompt):
     # Wait for the music to finish playing
     # while mixer.music.get_busy():
     #     time.sleep(1)
+    print("retornando audio e texto")
+
     return speech_file_path, model_output

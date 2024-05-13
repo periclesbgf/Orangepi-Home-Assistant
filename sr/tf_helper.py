@@ -36,7 +36,6 @@ def get_melspectrogram(waveform):
 from scipy.signal import resample
 
 def preprocess_audiobuffer(waveform):
-    # Calcula o número de amostras após a reamostragem
     num_samples = int(len(waveform) * 16000 / 44100)
 
     # Reamostrar o waveform
