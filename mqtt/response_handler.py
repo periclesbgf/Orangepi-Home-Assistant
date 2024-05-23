@@ -1,3 +1,4 @@
+import numpy as np
 from utils.constants import MQTT_TOPIC
 from mqtt.mqtt_controller import mqtt_publish
 from llm.llm import send_prompt
@@ -43,9 +44,9 @@ def handler(text):
         command = "0"
         mqtt_publish(command, "sala11/bomba")
     else:
-        play_audio(filename=filepath, device_id=3)
+        play_audio(filename=filepath, device_id=3, volume=2.0)
 
-def play_audio(filename: str, device_id: int):
+def play_audio(filename: str, device_id: int, volume: float = 1.0):
     print(filename)
     filename = str(filename)
 
@@ -64,15 +65,18 @@ def play_audio(filename: str, device_id: int):
     try:
         # Configuração da stream de áudio com o dispositivo de saída especificado
         stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
-                        channels=1,
-                        rate=44100,
+                        channels=wf.getnchannels(),
+                        rate=wf.getframerate(),  # Usa a taxa de amostragem do arquivo
                         output=True,
                         output_device_index=device_id)  # Adicionando o índice do dispositivo de saída
 
         data = wf.readframes(1024)
 
         while data:
-            stream.write(data)
+            # Aumentando o volume dos dados de áudio
+            frames = np.frombuffer(data, dtype=np.int16)
+            new_frames = (frames * volume).astype(np.int16)
+            stream.write(new_frames.tobytes())
             data = wf.readframes(1024)
     except Exception as e:
         print(f"Erro ao tocar o arquivo: {e}")
