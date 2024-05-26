@@ -5,3 +5,8 @@ certs/
 *.json
 *.wav
 *.log
+*.pem
+*.key
+*.crt
+*.csr
+*.wav
