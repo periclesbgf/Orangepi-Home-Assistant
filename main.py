@@ -14,6 +14,9 @@ from utils.constants import commands
 from mqtt.mqtt_controller import initialize_mqtt_client
 
 from mqtt.response_handler import handler
+import pygame
+pygame_menu = pygame
+pygame_menu.init()
 
 
 loaded_model = models.load_model("/home/orangepi/Orangepi-Home-Assistant/model")
@@ -51,6 +54,8 @@ def predict_mic():
     command = commands[label_pred[0]]
 
     if command == 'eden':
+        pygame_menu.Color('BLUE')
+        pygame_menu.time.get_ticks()
         print("Eden ativado")
         audio = record_audio(device_index=2, duration=4)
         filename = "audio.wav"
