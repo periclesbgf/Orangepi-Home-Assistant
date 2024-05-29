@@ -9,6 +9,10 @@ from button import Button
 from helper_function import (
     get_local_ip, initialize_mqtt_client, list_devices, list_output_devices, predict_mic, EDEN_EVENT
 )
+from mqtt.response_handler import (
+    LUMINARIA, LUZ, VALVULA, PORTA, BOMBA_DE_AGUA, handler, mqtt_publish,
+    MQTT_TOPIC_LUMINARIA, MQTT_TOPIC_LUZ, MQTT_TOPIC_VALVULA, MQTT_TOPIC_PORTA, MQTT_TOPIC_BOMBA
+    )
 
 import pygame
 
@@ -57,15 +61,12 @@ def check_selection_language(mouse_pos, y_offset_start):
     return -1
 
 
-    
-
-# Adicione uma variável global para rastrear o estado do botão on/off
 on_off_state = False
-on_off_state_geladeira = False
-on_off_state_cafeteira = False
-on_off_state_chuveiro = False
-on_off_state_termometro = False
-on_off_state_sensor = False
+on_off_state_luminaria = False
+on_off_state_luz = False
+on_off_state_bomba_de_agua = False
+on_off_state_valvula = False
+on_off_state_porta = False
 
 def draw_on_off_button(x, y, state):
     # Define as coordenadas e o tamanho do botão
@@ -80,30 +81,49 @@ def draw_on_off_button(x, y, state):
     text_rect = text.get_rect(center=button_rect.center)
     screen_resolution.blit(text, text_rect)
 
-def toggle_on_off_button_geladeira():
-    global on_off_state_geladeira
-    # Alterna o estado do botão da geladeira
-    on_off_state_geladeira = not on_off_state_geladeira
+def toggle_on_off_button_luminaria():
+    global on_off_state_luminaria
+    on_off_state_luminaria = not on_off_state_luminaria
+    command = 'off'
+    if on_off_state_luminaria:
+        command = 'on'
+    mqtt_publish(command, MQTT_TOPIC_LUMINARIA)
 
-def toggle_on_off_button_cafeteira():
-    global on_off_state_cafeteira
-    # Alterna o estado do botão da cafeteira
-    on_off_state_cafeteira = not on_off_state_cafeteira
+def toggle_on_off_button_luz():
+    global on_off_state_luz
+    # Alterna o estado do botão da luz
+    on_off_state_luz = not on_off_state_luz
+    command = 'off_light'
+    if on_off_state_luz:
+        command = 'on_light'
+    mqtt_publish(command, MQTT_TOPIC_LUZ)
 
-def toggle_on_off_button_chuveiro():
-    global on_off_state_chuveiro
-    # Alterna o estado do botão do chuveiro
-    on_off_state_chuveiro = not on_off_state_chuveiro
+def toggle_on_off_button_bomba_de_agua():
+    global on_off_state_bomba_de_agua
+    # Alterna o estado do botão do bomba_de_agua
+    on_off_state_bomba_de_agua = not on_off_state_bomba_de_agua
+    command = '0'
+    if on_off_state_bomba_de_agua:
+        command = '1'
+    mqtt_publish(command, MQTT_TOPIC_BOMBA)
 
-def toggle_on_off_button_termometro():
-    global on_off_state_termometro
+def toggle_on_off_button_valvula():
+    global on_off_state_valvula
     # Alterna o estado do botão do termômetro
-    on_off_state_termometro = not on_off_state_termometro
+    on_off_state_valvula = not on_off_state_valvula
+    command = '0'
+    if on_off_state_valvula:
+        command = '1'
+    mqtt_publish(command, MQTT_TOPIC_VALVULA)
 
-def toggle_on_off_button_sensor():
-    global on_off_state_sensor
-    # Alterna o estado do botão do sensor
-    on_off_state_sensor = not on_off_state_sensor
+def toggle_on_off_button_porta():
+    global on_off_state_porta
+    # Alterna o estado do botão do porta
+    on_off_state_porta = not on_off_state_porta
+    command = '00000000000000000000'
+    if on_off_state_porta:
+        command = '11111111111111111111'
+    mqtt_publish(command, MQTT_TOPIC_PORTA)
 
 def draw_notification(screen_resolution, message):
     # Cria uma superfície para a notificação
@@ -190,7 +210,7 @@ def main_menu(current_language_index):
                     line_color = pygame_menu.Color('BLUE')
                     color_timer = pygame_menu.time.get_ticks()
                 elif event.key == pygame_menu.K_2:
-                    toggle_on_off_button_geladeira()
+                    toggle_on_off_button_luminaria()
                     show_notification = True
                     notification_start_time = pygame_menu.time.get_ticks()
             if event.type == pygame_menu.MOUSEBUTTONDOWN:
@@ -237,81 +257,81 @@ def play(current_language_index):
             PLAY_TEXT = get_font(75).render("Dispositivos", True, "Black")
             PLAY_RECT = PLAY_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 11))
             screen_resolution.blit(PLAY_TEXT, PLAY_RECT)
-            # Desenha o botão on/off para a geladeira
-            draw_on_off_button(button_x, button_y_start, on_off_state_geladeira)
-            geladeira_text = get_font(40).render("Luminaria", True, (0, 0, 0))
-            screen_resolution.blit(geladeira_text, (button_x + 90, button_y_start - 5))
+            # Desenha o botão on/off para a luminaria
+            draw_on_off_button(button_x, button_y_start, on_off_state_luminaria)
+            luminaria_text = get_font(40).render("Luminaria", True, (0, 0, 0))
+            screen_resolution.blit(luminaria_text, (button_x + 90, button_y_start - 5))
 
-            # Desenha o botão on/off para a cafeteira
-            draw_on_off_button(button_x, button_y_start + 70, on_off_state_cafeteira)
-            cafeteira_text = get_font(40).render("Bomba d'água", True, (0, 0, 0))
-            screen_resolution.blit(cafeteira_text, (button_x + 90, button_y_start + 65))
+            # Desenha o botão on/off para a luz
+            draw_on_off_button(button_x, button_y_start + 70, on_off_state_luz)
+            luz_text = get_font(40).render("Bomba d'água", True, (0, 0, 0))
+            screen_resolution.blit(luz_text, (button_x + 90, button_y_start + 65))
 
-            # Desenha o botão on/off para o chuveiro
-            draw_on_off_button(button_x, button_y_start + 140, on_off_state_chuveiro)
-            chuveiro_text = get_font(40).render("Porta", True, (0, 0, 0))
-            screen_resolution.blit(chuveiro_text, (button_x + 90, button_y_start + 140))
+            # Desenha o botão on/off para o bomba_de_agua
+            draw_on_off_button(button_x, button_y_start + 140, on_off_state_bomba_de_agua)
+            bomba_de_agua_text = get_font(40).render("Porta", True, (0, 0, 0))
+            screen_resolution.blit(bomba_de_agua_text, (button_x + 90, button_y_start + 140))
 
             # Desenha o botão on/off para o termômetro
-            draw_on_off_button(button_x, button_y_start + 210, on_off_state_termometro)
-            termometro_text = get_font(40).render("Luz", True, (0, 0, 0))
-            screen_resolution.blit(termometro_text, (button_x + 90, button_y_start + 210))
+            draw_on_off_button(button_x, button_y_start + 210, on_off_state_valvula)
+            valvula_text = get_font(40).render("Luz", True, (0, 0, 0))
+            screen_resolution.blit(valvula_text, (button_x + 90, button_y_start + 210))
 
-            # Desenha o botão on/off para o sensor
-            draw_on_off_button(button_x, button_y_start + 280, on_off_state_sensor)
-            sensor_text = get_font(40).render("Válvula", True, (0, 0, 0))
-            screen_resolution.blit(sensor_text, (button_x + 90, button_y_start + 280))
+            # Desenha o botão on/off para o porta
+            draw_on_off_button(button_x, button_y_start + 280, on_off_state_porta)
+            porta_text = get_font(40).render("Válvula", True, (0, 0, 0))
+            screen_resolution.blit(porta_text, (button_x + 90, button_y_start + 280))
 
             PLAY_BACK = Button(image=None, pos=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 1.2), 
                                 text_input="Voltar", font=get_font(75), base_color="Black", hovering_color="Green")
-            
+
         elif (current_language_index == 1):
 
             PLAY_TEXT = get_font(75).render("Devices", True, "Black")
             PLAY_RECT = PLAY_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 11))
             screen_resolution.blit(PLAY_TEXT, PLAY_RECT)
-            # Desenha o botão on/off para a geladeira
-            draw_on_off_button(button_x, button_y_start, on_off_state_geladeira)
-            geladeira_text = get_font(40).render("Fridge", True, (0, 0, 0))
-            screen_resolution.blit(geladeira_text, (button_x + 90, button_y_start - 5))
+            # Desenha o botão on/off para a luminaria
+            draw_on_off_button(button_x, button_y_start, on_off_state_luminaria)
+            luminaria_text = get_font(40).render("Luminaria", True, (0, 0, 0))
+            screen_resolution.blit(luminaria_text, (button_x + 90, button_y_start - 5))
 
-            # Desenha o botão on/off para a cafeteira
-            draw_on_off_button(button_x, button_y_start + 70, on_off_state_cafeteira)
-            cafeteira_text = get_font(40).render("Coffee", True, (0, 0, 0))
-            screen_resolution.blit(cafeteira_text, (button_x + 90, button_y_start + 65))
+            # Desenha o botão on/off para a luz
+            draw_on_off_button(button_x, button_y_start + 70, on_off_state_luz)
+            luz_text = get_font(40).render("Luz", True, (0, 0, 0))
+            screen_resolution.blit(luz_text, (button_x + 90, button_y_start + 65))
 
-            # Desenha o botão on/off para o chuveiro
-            draw_on_off_button(button_x, button_y_start + 140, on_off_state_chuveiro)
-            chuveiro_text = get_font(40).render("Shower", True, (0, 0, 0))
-            screen_resolution.blit(chuveiro_text, (button_x + 90, button_y_start + 140))
+            # Desenha o botão on/off para o bomba_de_agua
+            draw_on_off_button(button_x, button_y_start + 140, on_off_state_bomba_de_agua)
+            bomba_de_agua_text = get_font(40).render("Bomba de agua", True, (0, 0, 0))
+            screen_resolution.blit(bomba_de_agua_text, (button_x + 90, button_y_start + 140))
 
             # Desenha o botão on/off para o termômetro
-            draw_on_off_button(button_x, button_y_start + 210, on_off_state_termometro)
-            termometro_text = get_font(40).render("Thermometer", True, (0, 0, 0))
-            screen_resolution.blit(termometro_text, (button_x + 90, button_y_start + 210))
+            draw_on_off_button(button_x, button_y_start + 210, on_off_state_valvula)
+            valvula_text = get_font(40).render("valvula", True, (0, 0, 0))
+            screen_resolution.blit(valvula_text, (button_x + 90, button_y_start + 210))
 
-            # Desenha o botão on/off para o sensor
-            draw_on_off_button(button_x, button_y_start + 280, on_off_state_sensor)
-            sensor_text = get_font(40).render("Sensor", True, (0, 0, 0))
-            screen_resolution.blit(sensor_text, (button_x + 90, button_y_start + 280))
+            # Desenha o botão on/off para o porta
+            draw_on_off_button(button_x, button_y_start + 280, on_off_state_porta)
+            porta_text = get_font(40).render("Porta", True, (0, 0, 0))
+            screen_resolution.blit(porta_text, (button_x + 90, button_y_start + 280))
 
             PLAY_BACK = Button(image=None, pos=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 1.2), 
                                 text_input="Back", font=get_font(75), base_color="Black", hovering_color="Green")
-        
-        SETTINGS_GELADEIRA = Button(image=pygame_menu.transform.scale(pygame_menu.image.load("assets/info.png"), (48,48)), pos=(screen_resolution.get_width() / 1.40, screen_resolution.get_height() / 4.3), 
-                            text_input="", font=get_font(75), base_color="Black", hovering_color="Green")
-        
-        SETTINGS_CAFETEIRA = Button(image=pygame_menu.transform.scale(pygame_menu.image.load("assets/info.png"), (48,48)), pos=(screen_resolution.get_width() / 1.40, screen_resolution.get_height() / 2.80), 
-                            text_input="", font=get_font(75), base_color="Black", hovering_color="Green")
-        
-        SETTINGS_CHUVEIRO = Button(image=pygame_menu.transform.scale(pygame_menu.image.load("assets/info.png"), (48,48)), pos=(screen_resolution.get_width() / 1.40, screen_resolution.get_height() / 2.1), 
-                            text_input="", font=get_font(75), base_color="Black", hovering_color="Green")
-        SETTINGS_TERMOMETRO = Button(image=pygame_menu.transform.scale(pygame_menu.image.load("assets/info.png"), (48,48)), pos=(screen_resolution.get_width() / 1.40, screen_resolution.get_height() / 1.70), 
-                            text_input="", font=get_font(75), base_color="Black", hovering_color="Green")
-        SETTINGS_SENSOR = Button(image=pygame_menu.transform.scale(pygame_menu.image.load("assets/info.png"), (48,48)), pos=(screen_resolution.get_width() / 1.40, screen_resolution.get_height() / 1.42), 
+
+        SETTINGS_luminaria = Button(image=pygame_menu.transform.scale(pygame_menu.image.load("assets/info.png"), (48,48)), pos=(screen_resolution.get_width() / 1.40, screen_resolution.get_height() / 4.3), 
                             text_input="", font=get_font(75), base_color="Black", hovering_color="Green")
 
-        for button in [PLAY_BACK, SETTINGS_GELADEIRA, SETTINGS_CAFETEIRA, SETTINGS_CHUVEIRO, SETTINGS_TERMOMETRO, SETTINGS_SENSOR]:
+        SETTINGS_luz = Button(image=pygame_menu.transform.scale(pygame_menu.image.load("assets/info.png"), (48,48)), pos=(screen_resolution.get_width() / 1.40, screen_resolution.get_height() / 2.80), 
+                            text_input="", font=get_font(75), base_color="Black", hovering_color="Green")
+
+        SETTINGS_bomba_de_agua = Button(image=pygame_menu.transform.scale(pygame_menu.image.load("assets/info.png"), (48,48)), pos=(screen_resolution.get_width() / 1.40, screen_resolution.get_height() / 2.1), 
+                            text_input="", font=get_font(75), base_color="Black", hovering_color="Green")
+        SETTINGS_valvula = Button(image=pygame_menu.transform.scale(pygame_menu.image.load("assets/info.png"), (48,48)), pos=(screen_resolution.get_width() / 1.40, screen_resolution.get_height() / 1.70), 
+                            text_input="", font=get_font(75), base_color="Black", hovering_color="Green")
+        SETTINGS_porta = Button(image=pygame_menu.transform.scale(pygame_menu.image.load("assets/info.png"), (48,48)), pos=(screen_resolution.get_width() / 1.40, screen_resolution.get_height() / 1.42), 
+                            text_input="", font=get_font(75), base_color="Black", hovering_color="Green")
+
+        for button in [PLAY_BACK, SETTINGS_luminaria, SETTINGS_luz, SETTINGS_bomba_de_agua, SETTINGS_valvula, SETTINGS_porta]:
             button.changeColor(PLAY_MOUSE_POS)
             button.update(screen_resolution)
 
@@ -319,40 +339,49 @@ def play(current_language_index):
             if event.type == pygame_menu.QUIT:
                 pygame_menu.quit()
                 sys.exit()
-            if event.type == pygame_menu.KEYDOWN:
-                if event.key == pygame_menu.K_1:
-                    line_color = pygame_menu.Color('BLUE')
-                    color_timer = pygame_menu.time.get_ticks()
+            if event.type == EDEN_EVENT:
+                line_color = pygame_menu.Color('BLUE')
+                color_timer = pygame_menu.time.get_ticks()
+            if event.type == LUMINARIA:
+                toggle_on_off_button_luminaria()
+            if event.type == LUZ:
+                toggle_on_off_button_luz()
+            if event.type == BOMBA_DE_AGUA:
+                toggle_on_off_button_bomba_de_agua()
+            if event.type == PORTA:
+                toggle_on_off_button_porta()
+            if event.type == VALVULA:
+                toggle_on_off_button_valvula()
             if event.type == pygame_menu.MOUSEBUTTONDOWN:
                 if PLAY_BACK.checkForInput(PLAY_MOUSE_POS):
                     main_menu(current_language_index)
-                if SETTINGS_GELADEIRA.checkForInput(PLAY_MOUSE_POS):
+                if SETTINGS_luminaria.checkForInput(PLAY_MOUSE_POS):
                     options(current_language_index)
-                if SETTINGS_CAFETEIRA.checkForInput(PLAY_MOUSE_POS):
+                if SETTINGS_luz.checkForInput(PLAY_MOUSE_POS):
                     options(current_language_index)
-                if SETTINGS_CHUVEIRO.checkForInput(PLAY_MOUSE_POS):
+                if SETTINGS_bomba_de_agua.checkForInput(PLAY_MOUSE_POS):
                     options(current_language_index)
-                if SETTINGS_TERMOMETRO.checkForInput(PLAY_MOUSE_POS):
+                if SETTINGS_valvula.checkForInput(PLAY_MOUSE_POS):
                     options(current_language_index)
-                if SETTINGS_SENSOR.checkForInput(PLAY_MOUSE_POS):
+                if SETTINGS_porta.checkForInput(PLAY_MOUSE_POS):
                     options(current_language_index)
-                # Verifica se o botão on/off da geladeira foi clicado
+                # Verifica se o botão on/off da luminaria foi clicado
                 if pygame_menu.Rect(button_x, button_y_start, 70, 35).collidepoint(event.pos):
-                    toggle_on_off_button_geladeira()
-                # Verifica se o botão on/off da cafeteira foi clicado
+                    toggle_on_off_button_luminaria()
+                # Verifica se o botão on/off da luz foi clicado
                 elif pygame_menu.Rect(button_x, button_y_start + 70, 100, 50).collidepoint(event.pos):
-                    toggle_on_off_button_cafeteira()
-                # Verifica se o botão on/off do chuveiro foi clicado
+                    toggle_on_off_button_luz()
+                # Verifica se o botão on/off do bomba_de_agua foi clicado
                 elif pygame_menu.Rect(button_x, button_y_start + 140, 100, 50).collidepoint(event.pos):
-                    toggle_on_off_button_chuveiro()
+                    toggle_on_off_button_bomba_de_agua()
                 # Verifica se o botão on/off do termômetro foi clicado
                 elif pygame_menu.Rect(button_x, button_y_start + 210, 100, 50).collidepoint(event.pos):
-                    toggle_on_off_button_termometro()
-                # Verifica se o botão on/off do sensor foi clicado
+                    toggle_on_off_button_valvula()
+                # Verifica se o botão on/off do porta foi clicado
                 elif pygame_menu.Rect(button_x, button_y_start + 280, 100, 50).collidepoint(event.pos):
-                    toggle_on_off_button_sensor()
+                    toggle_on_off_button_porta()
 
-        if pygame_menu.time.get_ticks() - color_timer >= 1000:
+        if pygame_menu.time.get_ticks() - color_timer >= 4000:
             line_color = pygame_menu.Color('black')
 
         pygame_menu.display.update()
@@ -373,7 +402,7 @@ def config(current_language_index):
                                     text_input="Resolução", font=get_font(75), base_color="Black", hovering_color="White")
             CONFIG_BACK = Button(image=None, pos=(screen_resolution.get_width() / 2, screen_resolution.get_height() * 0.9), 
                                 text_input="Voltar", font=get_font(75), base_color="Black", hovering_color="White")
-        
+
         if(current_language_index == 1):
 
             CONFIG_TEXT = get_font(75).render("Settings", True, "Black")
@@ -560,23 +589,23 @@ def language_settings(current_language_index):
         for i, lang in enumerate(languages):
             color = (pygame_menu.Color("BLACK"))
             lang_text = font.render(lang, True, color)
-            
+
             # Coordenadas da caixa de seleção
             checkbox_x = screen_resolution.get_width() / 2 - 150
             checkbox_y = y_offset
-            
+
             # Caixa de seleção
             checkbox_rect = pygame_menu.Rect(checkbox_x, checkbox_y, 20, 20)
             pygame_menu.draw.rect(screen_resolution, color, checkbox_rect, 2)
-            
+
             # Marcar caixa de seleção se for o idioma atual
             if i == current_language_index:
                 pygame_menu.draw.line(screen_resolution, color, (checkbox_x + 5, checkbox_y + 5), (checkbox_x + 15, checkbox_y + 15), 2)
                 pygame_menu.draw.line(screen_resolution, color, (checkbox_x + 15, checkbox_y + 5), (checkbox_x + 5, checkbox_y + 15), 2)
-            
+
             screen_resolution.blit(lang_text, (checkbox_x + 30, checkbox_y - 5))
             y_offset += 40
-            
+
             checkbox_areas.append(checkbox_rect)
 
         for event in pygame_menu.event.get():
@@ -593,7 +622,7 @@ def language_settings(current_language_index):
                         if checkbox_rect.collidepoint(mouse_pos):
                             current_language_index = i
                             break
-        
+
         pygame_menu.display.update()
 
 def history(current_language_index):
@@ -623,7 +652,7 @@ def history(current_language_index):
             SPEC1_BACK.changeColor(SPEC1_MOUSE_POS)
             SPEC1_BACK.update(screen_resolution)
 
-        
+
 
         for event in pygame_menu.event.get():
             if event.type == pygame_menu.QUIT:

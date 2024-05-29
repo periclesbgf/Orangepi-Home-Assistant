@@ -3,7 +3,6 @@ __pycache__/
 certs/
 .env
 *.json
-*.wav
 *.log
 *.pem
 *.key
