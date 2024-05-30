@@ -26,7 +26,7 @@ resolutions = [(640, 480), (800, 600), (1024, 600), (1280, 720), (1920, 1080), "
 #screen_resolution = pygame_menu.display.set_mode((1024, 600), pygame_menu.FULLSCREEN)
 screen_resolution = pygame_menu.display.set_mode((1024, 600))
 pygame_menu.display.set_caption("Eden")
-pygame_menu.mouse.set_visible(False)
+pygame_menu.mouse.set_visible(True)
 
 BG = pygame_menu.image.load("assets/fundoeden2.png")
 
@@ -84,45 +84,55 @@ def draw_on_off_button(x, y, state):
 def toggle_on_off_button_luminaria():
     global on_off_state_luminaria
     on_off_state_luminaria = not on_off_state_luminaria
-    command = 'off'
+
     if on_off_state_luminaria:
         command = 'on'
+    else:
+        command = 'off'
     mqtt_publish(command, MQTT_TOPIC_LUMINARIA)
 
 def toggle_on_off_button_luz():
     global on_off_state_luz
     # Alterna o estado do botão da luz
     on_off_state_luz = not on_off_state_luz
-    command = 'off_light'
+
     if on_off_state_luz:
         command = 'on_light'
+    else:
+        command = 'off_light'
     mqtt_publish(command, MQTT_TOPIC_LUZ)
 
 def toggle_on_off_button_bomba_de_agua():
     global on_off_state_bomba_de_agua
     # Alterna o estado do botão do bomba_de_agua
     on_off_state_bomba_de_agua = not on_off_state_bomba_de_agua
-    command = '0'
+
     if on_off_state_bomba_de_agua:
         command = '1'
+    else:
+        command = '0'
     mqtt_publish(command, MQTT_TOPIC_BOMBA)
 
 def toggle_on_off_button_valvula():
     global on_off_state_valvula
     # Alterna o estado do botão do termômetro
     on_off_state_valvula = not on_off_state_valvula
-    command = '0'
+
     if on_off_state_valvula:
         command = '1'
+    else:
+        command = '0'
     mqtt_publish(command, MQTT_TOPIC_VALVULA)
 
 def toggle_on_off_button_porta():
     global on_off_state_porta
     # Alterna o estado do botão do porta
     on_off_state_porta = not on_off_state_porta
-    command = '00000000000000000000'
+
     if on_off_state_porta:
         command = '11111111111111111111'
+    else:
+        command = '00000000000000000000'
     mqtt_publish(command, MQTT_TOPIC_PORTA)
 
 def draw_notification(screen_resolution, message):
@@ -178,7 +188,7 @@ def main_menu(current_language_index):
                                 text_input="", font=get_font(75), base_color="#d7fcd4", hovering_color="White") 
             QUIT_BUTTON = Button(image=pygame_menu.image.load("assets/Sair.png"), pos=(screen_resolution.get_width() * 0.70, screen_resolution.get_height() / 2), 
                                 text_input="Sair", font=get_font(45), base_color="#d7fcd4", hovering_color="White")
-            
+
         elif(current_language_index == 1):
             DISPOSITIVOS_BUTTON = Button(image=pygame_menu.image.load("assets/dispositivosrect.png"), pos=(screen_resolution.get_width() * 0.40, screen_resolution.get_height() / 2), 
                                 text_input="Devices", font=get_font(45), base_color="#d7fcd4", hovering_color="White")
@@ -209,10 +219,6 @@ def main_menu(current_language_index):
                 elif event.key == pygame_menu.K_1:
                     line_color = pygame_menu.Color('BLUE')
                     color_timer = pygame_menu.time.get_ticks()
-                elif event.key == pygame_menu.K_2:
-                    toggle_on_off_button_luminaria()
-                    show_notification = True
-                    notification_start_time = pygame_menu.time.get_ticks()
             if event.type == pygame_menu.MOUSEBUTTONDOWN:
                 if show_notification and button_rect and button_rect.collidepoint(event.pos):
                     play(current_language_index)
@@ -264,22 +270,22 @@ def play(current_language_index):
 
             # Desenha o botão on/off para a luz
             draw_on_off_button(button_x, button_y_start + 70, on_off_state_luz)
-            luz_text = get_font(40).render("Bomba d'água", True, (0, 0, 0))
+            luz_text = get_font(40).render("Luz", True, (0, 0, 0))
             screen_resolution.blit(luz_text, (button_x + 90, button_y_start + 65))
 
             # Desenha o botão on/off para o bomba_de_agua
             draw_on_off_button(button_x, button_y_start + 140, on_off_state_bomba_de_agua)
-            bomba_de_agua_text = get_font(40).render("Porta", True, (0, 0, 0))
+            bomba_de_agua_text = get_font(40).render("Bomba de Água", True, (0, 0, 0))
             screen_resolution.blit(bomba_de_agua_text, (button_x + 90, button_y_start + 140))
 
             # Desenha o botão on/off para o termômetro
             draw_on_off_button(button_x, button_y_start + 210, on_off_state_valvula)
-            valvula_text = get_font(40).render("Luz", True, (0, 0, 0))
+            valvula_text = get_font(40).render("Válvula", True, (0, 0, 0))
             screen_resolution.blit(valvula_text, (button_x + 90, button_y_start + 210))
 
             # Desenha o botão on/off para o porta
             draw_on_off_button(button_x, button_y_start + 280, on_off_state_porta)
-            porta_text = get_font(40).render("Válvula", True, (0, 0, 0))
+            porta_text = get_font(40).render("Porta", True, (0, 0, 0))
             screen_resolution.blit(porta_text, (button_x + 90, button_y_start + 280))
 
             PLAY_BACK = Button(image=None, pos=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 1.2), 
@@ -700,7 +706,7 @@ def especificacao1(current_language_index):
                 sys.exit()
             if event.type == pygame_menu.MOUSEBUTTONDOWN:
                 if SPEC1_BACK.checkForInput(SPEC1_MOUSE_POS):
-                    options(current_language_index)  
+                    options(current_language_index)
 
         pygame_menu.display.update()
 
@@ -785,7 +791,7 @@ def options(current_language_index):
             OPTIONS_BACK.changeColor(OPTIONS_MOUSE_POS)
 
             OPTIONS_BACK.update(screen_resolution)
-        
+
         if (current_language_index == 1):
             OPTIONS_TEXT = get_font(45).render("Details", True, "Black")
             OPTIONS_RECT = OPTIONS_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 8))
@@ -817,7 +823,7 @@ def options(current_language_index):
                 sys.exit()
             if event.type == pygame_menu.MOUSEBUTTONDOWN:
                 if OPTIONS_BACK.checkForInput(OPTIONS_MOUSE_POS):
-                    play(current_language_index)  
+                    play(current_language_index)
                 if grafico1_img.get_rect(topleft=(screen_resolution.get_width() * 0.15, screen_resolution.get_height() * 0.2)).collidepoint(event.pos):
                     especificacao1(current_language_index)
                 if grafico2_img.get_rect(topleft=(screen_resolution.get_width() * 0.6, screen_resolution.get_height() * 0.2)).collidepoint(event.pos):

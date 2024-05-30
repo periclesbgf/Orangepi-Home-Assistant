@@ -1,6 +1,8 @@
 import numpy as np
 import tensorflow as tf
 import librosa
+from scipy.signal import resample
+
 
 
 # Set the seed value for experiment reproducibility.
@@ -33,19 +35,24 @@ def get_melspectrogram(waveform):
     return mel_spectrogram[..., tf.newaxis]  # Adiciona um novo eixo para manter a mesma estrutura
 
 
-from scipy.signal import resample
-
 def preprocess_audiobuffer(waveform):
-    num_samples = int(len(waveform) * 16000 / 44100)
+    try:
+        #print(f"Iniciando preprocessamento do buffer de áudio com {len(waveform)} amostras")
+        num_samples = int(len(waveform) * 16000 / 44032)
 
-    # Reamostrar o waveform
-    waveform = resample(waveform, num_samples)
+        # Reamostrar o waveform
+        waveform = resample(waveform, num_samples)
+        #print(f"Waveform reamostrado para {num_samples} amostras")
 
-    # Normaliza de [-32768, 32767] para [-1, 1]
-    waveform = waveform / 32768
+        # Normaliza de [-32768, 32767] para [-1, 1]
+        waveform = waveform / 32768
 
-    waveform = tf.convert_to_tensor(waveform, dtype=tf.float32)
-    spectogram = get_melspectrogram(waveform)
-    spectogram = tf.expand_dims(spectogram, 0)
+        waveform = tf.convert_to_tensor(waveform, dtype=tf.float32)
+        spectrogram = get_melspectrogram(waveform)
+        spectrogram = tf.expand_dims(spectrogram, 0)
+        #print("Preprocessamento concluído com sucesso")
 
-    return spectogram
+        return spectrogram
+    except Exception as e:
+        print(f"Erro no preprocessamento do buffer de áudio: {e}")
+        return None

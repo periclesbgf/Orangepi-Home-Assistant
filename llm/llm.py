@@ -58,7 +58,6 @@ history = [
 
 def send_prompt(user_prompt):
     print("Enviando prompt")
-    # Adiciona o prompt do usuário à história antes de fazer a chamada para a API
     history.append({"role": "user", "content": user_prompt})
 
     completion = client.chat.completions.create(
@@ -78,6 +77,8 @@ def send_prompt(user_prompt):
     print("Resposta recebida")
     new_message["content"] = model_output
     if new_message["content"] == "Desculpe, não entendi.":
+        return None, model_output
+    if new_message["content"].lower() in ["ligar luminária", "desligar luminária", "ligar luz", "desligar luz", "travar porta", "destravar porta", "checar bomba de água", "ligar válvula", "desligar válvula", "ligar bomba de água", "desligar bomba de água"]:
         return None, model_output
 
     history.append(new_message)
