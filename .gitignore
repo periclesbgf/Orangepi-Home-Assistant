@@ -9,3 +9,5 @@ certs/
 *.crt
 *.csr
 *.wav
+*.pyc
+.DS_Store

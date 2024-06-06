@@ -53,8 +53,10 @@ def initialize_stream(p, input_device_index):
                   channels=CHANNELS,
                   rate=RATE,
                   input=True,
+                  output=True,
                   frames_per_buffer=FRAMES_PER_BUFFER,
-                  input_device_index=input_device_index)
+                  input_device_index=input_device_index,
+                  output_device_index=0,)
 
 def predict_mic(pygame_menu):
     p = pyaudio.PyAudio()
@@ -119,7 +121,7 @@ def predict_mic(pygame_menu):
                                     print("Erro ao transcrever o áudio")
                                     continue
 
-                                handler(text)
+                                handler(text,stream)
                                 #audio_buffer = []  # Limpar o buffer de áudio
 
                         except Exception as e:

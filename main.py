@@ -23,8 +23,8 @@ pygame_menu.init()
 current_language_index = 0
 current_resolution_index = 1
 Fullscreen = 1
-screen_resolution = pygame.display.set_mode((1024, 600), pygame.FULLSCREEN)  #CASO VÁ COLOCAR FULL SCREEN, SETAR VARIÁVEL FULLSCREN PARA 0
-#screen_resolution = pygame.display.set_mode((1024, 600))
+#screen_resolution = pygame.display.set_mode((1024, 600), pygame.FULLSCREEN)  #CASO VÁ COLOCAR FULL SCREEN, SETAR VARIÁVEL FULLSCREN PARA 0
+screen_resolution = pygame.display.set_mode((1024, 600))
 pygame.display.set_caption("Eden")
 #pygame.mouse.set_visible(False)
 
@@ -33,7 +33,7 @@ edenlogo = pygame.image.load('assets/edenlogo.png')
 Settings = pygame.image.load('assets/settings.png')
 Devices = pygame.image.load('assets/devices_image.png')
 
-def get_font(size): 
+def get_font(size):
     return pygame.font.Font("assets/Gully-Bold.otf", size)
 
 def draw_horizontal_line(color):
