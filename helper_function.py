@@ -24,9 +24,9 @@ loaded_model = models.load_model("model-teste")
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
-FRAMES_PER_BUFFER = 1024
+FRAMES_PER_BUFFER = 2048
 RATE_44100 = 44100
-DEVICE_INPUT_INDEX = 2
+DEVICE_INPUT_INDEX = 1
 
 load_dotenv()
 google_credentials = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
@@ -106,10 +106,8 @@ def predict_mic(pygame_menu):
                                 # Gravar áudio adicional para o comando "Eden"
                                 additional_audio = []
                                 for _ in range(int(4 * RATE_44100 / FRAMES_PER_BUFFER)):  # 4 segundos de áudio
-                                    data = stream.read(FRAMES_PER_BUFFER, exception_on_overflow=False)
+                                    data = stream.read((FRAMES_PER_BUFFER*4), exception_on_overflow=False)
                                     additional_audio.append(data)
-
-
 
                                 audio = b''.join(additional_audio)
                                 filename = "audio_segment.wav"

@@ -130,10 +130,7 @@ def toggle_on_off_button_porta():
     # Alterna o estado do botão do porta
     on_off_state_porta = not on_off_state_porta
 
-    if on_off_state_porta:
-        command = '11111111111111111111'
-    else:
-        command = '00000000000000000000'
+    command = '11111111111111111111'
     mqtt_publish(command, MQTT_TOPIC_PORTA)
 
 def draw_notification(screen_resolution, message, current_language_index):
