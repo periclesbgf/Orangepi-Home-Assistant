@@ -109,7 +109,12 @@ def predict_mic(pygame_menu):
                                     data = stream.read(FRAMES_PER_BUFFER, exception_on_overflow=False)
                                     additional_audio.append(data)
 
+
+
                                 audio = b''.join(additional_audio)
+                                filename = "audio_segment.wav"
+                                save_audio_data_to_wav(audio, filename)
+                                print(f"Segmento de áudio salvo em: {filename}")
                                 filename = "audio.wav"
                                 filename = save_audio_data_to_wav(audio, filename)
                                 stream.stop_stream()
