@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from google.cloud import speech
 import pygame
+import time
 import pyaudio
 
 from utils.utils import get_local_ip
@@ -47,12 +48,20 @@ def save_audio_data_to_wav(data, filename):
     except Exception as e:
         print(f"Erro ao salvar os dados de áudio como WAV: {e}")
 
+def initialize_stream(p, input_device_index):
+    return p.open(format=FORMAT,
+                  channels=CHANNELS,
+                  rate=RATE,
+                  input=True,
+                  frames_per_buffer=FRAMES_PER_BUFFER,
+                  input_device_index=input_device_index)
+
 def predict_mic(pygame_menu):
     p = pyaudio.PyAudio()
 
     # Verificar se o dispositivo de entrada está disponível
     try:
-        input_device_index = 1  # Alterar para o índice correto do seu dispositivo de entrada
+        input_device_index = 2  # Alterar para o índice correto do seu dispositivo de entrada
         input_device_info = p.get_device_info_by_index(input_device_index)
         if not input_device_info['maxInputChannels'] > 0:
             print(f"Dispositivo de entrada {input_device_index} não está disponível.")
@@ -64,77 +73,79 @@ def predict_mic(pygame_menu):
         print(f"Índice do dispositivo de entrada fora do intervalo: {e}")
         return
 
+    stream = None
     try:
-        stream = p.open(format=FORMAT,
-                        channels=CHANNELS,
-                        rate=RATE,
-                        input=True,
-                        frames_per_buffer=FRAMES_PER_BUFFER,
-                        input_device_index=input_device_index)
-
+        stream = initialize_stream(p, input_device_index)
         audio_buffer = []
 
         while True:
-            #print("Antes de ler o áudio")
             try:
-                data = stream.read(FRAMES_PER_BUFFER, exception_on_overflow=False)
-                audio_buffer.append(data)
-                #print(f"Gravando áudio: tamanho do buffer atual = {len(audio_buffer) * FRAMES_PER_BUFFER} bytes")
+                if stream.is_active():
+                    data = stream.read(FRAMES_PER_BUFFER, exception_on_overflow=False)
+                    audio_buffer.append(data)
 
-                # Empacotar áudio em segmentos de 1 segundo
-                if len(audio_buffer) * FRAMES_PER_BUFFER >= RATE:  # 44100 amostras por segundo
-                    audio_segment = b''.join(audio_buffer[:RATE // FRAMES_PER_BUFFER])
-                    audio_buffer = audio_buffer[RATE // FRAMES_PER_BUFFER:]  # Remover o áudio já processado
+                    # Empacotar áudio em segmentos de 1 segundo
+                    if len(audio_buffer) * FRAMES_PER_BUFFER >= RATE:  # 44100 amostras por segundo
+                        audio_segment = b''.join(audio_buffer[:RATE // FRAMES_PER_BUFFER])
+                        audio_buffer = audio_buffer[RATE // FRAMES_PER_BUFFER:]  # Remover o áudio já processado
 
-                    #print("Buffer cheio, processando segmento de áudio")
-                    #print(f"Tamanho do segmento de áudio: {len(audio_segment)} bytes")
-                    #print("Buffer limpo")
+                        spec = preprocess_audiobuffer(np.frombuffer(audio_segment, dtype=np.int16))
+                        if spec is None:
+                            print("Erro ao preprocessar o segmento de áudio. Continuando com o próximo segmento.")
+                            continue
 
-                    #print("Preprocessando segmento de áudio")
-                    spec = preprocess_audiobuffer(np.frombuffer(audio_segment, dtype=np.int16))
-                    if spec is None:
-                        print("Erro ao preprocessar o segmento de áudio. Continuando com o próximo segmento.")
-                        continue
-                    #print("Segmento de áudio pré-processado")
-                    try:
-                        prediction = loaded_model(spec)
-                        #print("Predição concluída")
-                        label_pred = np.argmax(prediction, axis=1)
-                        command = commands[label_pred[0]]
+                        try:
+                            prediction = loaded_model(spec)
+                            #print("Predição concluída")
+                            label_pred = np.argmax(prediction, axis=1)
+                            command = commands[label_pred[0]]
 
-                        if command == 'eden':
-                            print("Eden ativado")
-                            pygame.event.post(pygame.event.Event(EDEN_EVENT))
+                            if command == 'eden':
+                                print("Eden ativado")
+                                pygame.event.post(pygame.event.Event(EDEN_EVENT))
 
-                            # Gravar áudio adicional para o comando "Eden"
-                            additional_audio = []
-                            for _ in range(int(4 * RATE / FRAMES_PER_BUFFER)):  # 4 segundos de áudio
-                                data = stream.read(FRAMES_PER_BUFFER)
-                                additional_audio.append(data)
+                                # Gravar áudio adicional para o comando "Eden"
+                                additional_audio = []
+                                for _ in range(int(4 * RATE / FRAMES_PER_BUFFER)):  # 4 segundos de áudio
+                                    data = stream.read(FRAMES_PER_BUFFER, exception_on_overflow=False)
+                                    additional_audio.append(data)
 
-                            audio = b''.join(additional_audio)
-                            filename = "audio.wav"
-                            filename = save_audio_data_to_wav(audio, filename)
-                            text = transc(filename)
+                                audio = b''.join(additional_audio)
+                                filename = "audio.wav"
+                                filename = save_audio_data_to_wav(audio, filename)
+                                text = transc(filename)
 
-                            if text == "Não foi possível transcrever o áudio" or text == "":
-                                print("Erro ao transcrever o áudio")
-                                continue
+                                if text == "Não foi possível transcrever o áudio" or text == "":
+                                    print("Erro ao transcrever o áudio")
+                                    continue
 
-                            handler(text)
+                                handler(text)
+                                #audio_buffer = []  # Limpar o buffer de áudio
 
-                    except Exception as e:
-                        print(f"Erro ao processar segmento de áudio: {e}")
+                        except Exception as e:
+                            print(f"Erro ao processar segmento de áudio: {e}")
+                    else:
+                        time.sleep(0.01)  # Pequeno atraso para evitar sobrecarga
+                else:
+                    print("Stream inativo, reinicializando stream...")
+                    stream.stop_stream()
+                    stream.close()
+                    stream = initialize_stream(p, input_device_index)
             except IOError as e:
                 print(f"Erro na leitura do stream de áudio: {e}")
+                if 'stream' in locals():
+                    stream.stop_stream()
+                    stream.close()
+                stream = initialize_stream(p, input_device_index)
+                audio_buffer = []  # Limpar o buffer de áudio após erro de overflow
+
     except Exception as e:
         print(f"Erro na captura de áudio: {e}")
     finally:
-        if 'stream' in locals():
+        if stream and stream.is_active():
             stream.stop_stream()
             stream.close()
         p.terminate()
-
 
 def delete_file(file):
     try:

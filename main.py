@@ -23,10 +23,10 @@ current_language_index = 0
 Fullscreen = 0
 current_resolution_index = 3
 resolutions = [(640, 480), (800, 600), (1024, 600), (1280, 720), (1920, 1080), "Fullscreen"]
-#screen_resolution = pygame_menu.display.set_mode((1024, 600), pygame_menu.FULLSCREEN)
-screen_resolution = pygame_menu.display.set_mode((1024, 600))
+screen_resolution = pygame_menu.display.set_mode((1024, 600), pygame_menu.FULLSCREEN)
+#screen_resolution = pygame_menu.display.set_mode((1024, 600))
 pygame_menu.display.set_caption("Eden")
-pygame_menu.mouse.set_visible(True)
+pygame_menu.mouse.set_visible(False)
 
 BG = pygame_menu.image.load("assets/fundoeden2.png")
 

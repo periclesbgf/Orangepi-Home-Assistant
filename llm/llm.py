@@ -74,7 +74,7 @@ def send_prompt(user_prompt):
     for chunk in completion:
         if chunk.choices[0].delta.content:
             model_output += chunk.choices[0].delta.content
-    print("Resposta recebida")
+    #print("Resposta recebida")
     new_message["content"] = model_output
     if new_message["content"] == "Desculpe, não entendi.":
         return None, model_output
@@ -82,13 +82,14 @@ def send_prompt(user_prompt):
         return None, model_output
 
     history.append(new_message)
-    print("Enviando requisicao de audio")
+    #print("Enviando requisicao de audio")
     response = client.audio.speech.create(
         model="tts-1",
         voice="nova",
-        input=new_message["content"]
+        input=new_message["content"],
+        speed=0.9,
     )
-    print("Resposta de audio recebida")
+    #print("Resposta de audio recebida")
 
     # Salva o conteúdo da resposta em um arquivo de áudio temporário no formato mp3
     temp_path = speech_file_path.with_suffix('.mp3')
@@ -98,7 +99,7 @@ def send_prompt(user_prompt):
     # Converte o arquivo de mp3 para wav
     sound = AudioSegment.from_mp3(temp_path)
     sound.export(speech_file_path, format="wav", parameters=["-ar", str(44100)])
-    print("Resposta convertida para áudio")
+    #print("Resposta convertida para áudio")
 
 
     # Limpa o arquivo mp3 temporário
@@ -110,6 +111,6 @@ def send_prompt(user_prompt):
     # Wait for the music to finish playing
     # while mixer.music.get_busy():
     #     time.sleep(1)
-    print("retornando audio e texto")
+    #print("retornando audio e texto")
 
     return speech_file_path, model_output

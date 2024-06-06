@@ -6,9 +6,9 @@ import pyaudio, wave, os, time
 
 import pygame
 
-DEVICE_INPUT_INDEX = 1
-DEVICE_OUTPUT_INDEX = 2
-VOLUME = 2.0
+DEVICE_INPUT_INDEX = 2
+DEVICE_OUTPUT_INDEX = 0
+VOLUME = 1.0
 LUMINARIA = pygame.USEREVENT + 2
 LUZ = pygame.USEREVENT + 3
 VALVULA = pygame.USEREVENT + 4
@@ -77,13 +77,12 @@ def handler(text):
         mqtt_publish(command, MQTT_TOPIC_BOMBA)
         play_audio("llm/comando.wav", DEVICE_OUTPUT_INDEX, VOLUME)
     elif text_lower in ["desculpe, não entendi.", "desculpe, não entendi", "não entendi", "não entendi.", "desculpe não entendi."]:
-        play_audio("llm/desculpe_melhor_ainda.wav", 2, 2.0)
+        play_audio("llm/desculpe_melhor_ainda.wav", DEVICE_OUTPUT_INDEX, VOLUME)
     else:
         print("Entrei no ultimo if")
-        play_audio(filename=filepath, device_id=2, volume=2.0)
+        play_audio(filename=filepath, device_id=DEVICE_OUTPUT_INDEX, volume=VOLUME)
 
 def play_audio(filename: str, device_id: int, volume: float = 1.0):
-    print(filename)
     filename = str(filename)
 
     if not os.path.exists(filename):
@@ -99,9 +98,14 @@ def play_audio(filename: str, device_id: int, volume: float = 1.0):
     p = pyaudio.PyAudio()
 
     try:
+        # Verificar o número de canais do dispositivo de saída
+        output_device_info = p.get_device_info_by_index(device_id)
+        max_output_channels = output_device_info['maxOutputChannels']
+        channels = min(wf.getnchannels(), max_output_channels)
+
         # Configuração da stream de áudio com o dispositivo de saída especificado
         stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
-                        channels=wf.getnchannels(),
+                        channels=channels,  # Definir canais conforme a capacidade do dispositivo
                         rate=wf.getframerate(),  # Usa a taxa de amostragem do arquivo
                         output=True,
                         output_device_index=device_id)  # Adicionando o índice do dispositivo de saída
