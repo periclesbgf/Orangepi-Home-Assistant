@@ -23,9 +23,9 @@ EDEN_EVENT = pygame.USEREVENT + 1
 loaded_model = models.load_model("model-teste")
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
-RATE = 44100
+RATE = 16000
 FRAMES_PER_BUFFER = 1024
-
+RATE_44100 = 44100
 
 load_dotenv()
 google_credentials = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
@@ -42,7 +42,7 @@ def save_audio_data_to_wav(data, filename):
         with wave.open(filename, 'wb') as audio_file:
             audio_file.setnchannels(1)  # Mono
             audio_file.setsampwidth(2)   # 16 bits
-            audio_file.setframerate(44100)  # Exemplo de taxa de amostragem
+            audio_file.setframerate(RATE)  # Exemplo de taxa de amostragem
             audio_file.writeframes(data)
         return filename
     except Exception as e:
@@ -53,17 +53,14 @@ def initialize_stream(p, input_device_index):
                   channels=CHANNELS,
                   rate=RATE,
                   input=True,
-                  output=True,
                   frames_per_buffer=FRAMES_PER_BUFFER,
-                  input_device_index=input_device_index,
-                  output_device_index=0,)
+                  input_device_index=input_device_index)
 
 def predict_mic(pygame_menu):
     p = pyaudio.PyAudio()
 
-    # Verificar se o dispositivo de entrada está disponível
     try:
-        input_device_index = 2  # Alterar para o índice correto do seu dispositivo de entrada
+        input_device_index = 1  # Alterar para o índice correto do seu dispositivo de entrada
         input_device_info = p.get_device_info_by_index(input_device_index)
         if not input_device_info['maxInputChannels'] > 0:
             print(f"Dispositivo de entrada {input_device_index} não está disponível.")
@@ -86,10 +83,9 @@ def predict_mic(pygame_menu):
                     data = stream.read(FRAMES_PER_BUFFER, exception_on_overflow=False)
                     audio_buffer.append(data)
 
-                    # Empacotar áudio em segmentos de 1 segundo
-                    if len(audio_buffer) * FRAMES_PER_BUFFER >= RATE:  # 44100 amostras por segundo
+                    if len(audio_buffer) * FRAMES_PER_BUFFER >= RATE:
                         audio_segment = b''.join(audio_buffer[:RATE // FRAMES_PER_BUFFER])
-                        audio_buffer = audio_buffer[RATE // FRAMES_PER_BUFFER:]  # Remover o áudio já processado
+                        audio_buffer = audio_buffer[RATE // FRAMES_PER_BUFFER:]
 
                         spec = preprocess_audiobuffer(np.frombuffer(audio_segment, dtype=np.int16))
                         if spec is None:
@@ -115,7 +111,10 @@ def predict_mic(pygame_menu):
                                 audio = b''.join(additional_audio)
                                 filename = "audio.wav"
                                 filename = save_audio_data_to_wav(audio, filename)
+                                stream.stop_stream()
+                                stream.close()
                                 text = transc(filename)
+                                stream = initialize_stream(p, input_device_index)
 
                                 if text == "Não foi possível transcrever o áudio" or text == "":
                                     print("Erro ao transcrever o áudio")

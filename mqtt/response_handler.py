@@ -6,8 +6,8 @@ import pyaudio, wave, os, time
 
 import pygame
 
-DEVICE_INPUT_INDEX = 2
-DEVICE_OUTPUT_INDEX = 1
+DEVICE_INPUT_INDEX = 1
+DEVICE_OUTPUT_INDEX = 2
 VOLUME = 1.0
 LUMINARIA = pygame.USEREVENT + 2
 LUZ = pygame.USEREVENT + 3
@@ -95,20 +95,20 @@ def play_audio(filename: str, device_id: int, volume: float = 1.0, stream=None):
         print(f"Erro ao abrir o arquivo: {e}")
         return
 
-    #p = pyaudio.PyAudio()
+    p = pyaudio.PyAudio()
 
     try:
-        # # Verificar o número de canais do dispositivo de saída
-        # output_device_info = p.get_device_info_by_index(device_id)
-        # max_output_channels = output_device_info['maxOutputChannels']
-        # channels = min(wf.getnchannels(), max_output_channels)
+        # Verificar o número de canais do dispositivo de saída
+        output_device_info = p.get_device_info_by_index(device_id)
+        max_output_channels = output_device_info['maxOutputChannels']
+        channels = min(wf.getnchannels(), max_output_channels)
 
-        # # Configuração da stream de áudio com o dispositivo de saída especificado
-        # stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
-        #                 channels=channels,  # Definir canais conforme a capacidade do dispositivo
-        #                 rate=wf.getframerate(),  # Usa a taxa de amostragem do arquivo
-        #                 output=True,
-        #                 output_device_index=device_id)  # Adicionando o índice do dispositivo de saída
+        # Configuração da stream de áudio com o dispositivo de saída especificado
+        stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                        channels=channels,  # Definir canais conforme a capacidade do dispositivo
+                        rate=wf.getframerate(),  # Usa a taxa de amostragem do arquivo
+                        output=True,
+                        output_device_index=device_id)  # Adicionando o índice do dispositivo de saída
 
         data = wf.readframes(1024)
 
@@ -120,11 +120,11 @@ def play_audio(filename: str, device_id: int, volume: float = 1.0, stream=None):
             data = wf.readframes(1024)
     except Exception as e:
         print(f"Erro ao tocar o arquivo: {e}")
-    # finally:
-    #     if 'stream' in locals():
-    #         time.sleep(0.3)
-    #         stream.stop_stream()
-    #         stream.close()
-    #     if 'wf' in locals():
-    #         wf.close()
-    #     p.terminate()
+    finally:
+        if 'stream' in locals():
+            time.sleep(0.3)
+            stream.stop_stream()
+            stream.close()
+        if 'wf' in locals():
+            wf.close()
+        p.terminate()
