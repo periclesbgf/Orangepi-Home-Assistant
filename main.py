@@ -19,22 +19,25 @@ import pygame
 pygame_menu = pygame
 pygame_menu.init()
 
+
 current_language_index = 0
-Fullscreen = 0
-current_resolution_index = 3
-resolutions = [(640, 480), (800, 600), (1024, 600), (1280, 720), (1920, 1080), "Fullscreen"]
-screen_resolution = pygame_menu.display.set_mode((1024, 600), pygame_menu.FULLSCREEN)
-#screen_resolution = pygame_menu.display.set_mode((1024, 600))
-pygame_menu.display.set_caption("Eden")
-pygame_menu.mouse.set_visible(False)
+current_resolution_index = 1
+Fullscreen = 1
+screen_resolution = pygame.display.set_mode((1024, 600), pygame.FULLSCREEN)  #CASO VÁ COLOCAR FULL SCREEN, SETAR VARIÁVEL FULLSCREN PARA 0
+#screen_resolution = pygame.display.set_mode((1024, 600))
+pygame.display.set_caption("Eden")
+#pygame.mouse.set_visible(False)
 
-BG = pygame_menu.image.load("assets/fundoeden2.png")
+BG = pygame.image.load("assets/fundoedendeverdade.png")
+edenlogo = pygame.image.load('assets/edenlogo.png')
+Settings = pygame.image.load('assets/settings.png')
+Devices = pygame.image.load('assets/devices_image.png')
 
-def get_font(size):
-    return pygame_menu.font.Font("assets/LucidaTypewriterBold.ttf", size)
+def get_font(size): 
+    return pygame.font.Font("assets/Gully-Bold.otf", size)
 
 def draw_horizontal_line(color):
-    pygame_menu.draw.line(screen_resolution, color, (0, screen_resolution.get_height() / 1.3), (screen_resolution.get_width(), screen_resolution.get_height() / 1.3), 5)
+    pygame.draw.line(screen_resolution, color, (0, screen_resolution.get_height() / 1.3), (screen_resolution.get_width(), screen_resolution.get_height() / 1.3), 5)
 
 def check_selection_resolution(mouse_pos, y_offset_start, num_items):
     y_offset = y_offset_start
@@ -42,7 +45,7 @@ def check_selection_resolution(mouse_pos, y_offset_start, num_items):
         # Coordenadas atualizadas da caixa de seleção
         checkbox_x = screen_resolution.get_width() / 2 - 150
         checkbox_y = y_offset
-        checkbox_rect = pygame_menu.Rect(checkbox_x, checkbox_y, 20, 20)
+        checkbox_rect = pygame.Rect(checkbox_x, checkbox_y, 20, 20)
         if checkbox_rect.collidepoint(mouse_pos):
             return i
         y_offset += 40
@@ -54,32 +57,30 @@ def check_selection_language(mouse_pos, y_offset_start):
         # Coordenadas da caixa de seleção
         checkbox_x = screen_resolution.get_width() / 2 - 150
         checkbox_y = y_offset
-        checkbox_rect = pygame_menu.Rect(checkbox_x, checkbox_y, 20, 20)
+        checkbox_rect = pygame.Rect(checkbox_x, checkbox_y, 20, 20)
         if checkbox_rect.collidepoint(mouse_pos):
             return i
         y_offset += 40
     return -1
 
 
+# Adicione uma variável global para rastrear o estado do botão on/off
 on_off_state = False
 on_off_state_luminaria = False
-on_off_state_luz = False
 on_off_state_bomba_de_agua = False
-on_off_state_valvula = False
 on_off_state_porta = False
+on_off_state_luz = False
+on_off_state_valvula = False
 
-def draw_on_off_button(x, y, state):
-    # Define as coordenadas e o tamanho do botão
-    button_rect = pygame_menu.Rect(x, y, 70, 35)
-    # Determina a cor com base no estado atual
-    button_color = (0, 255, 0) if state else (255, 0, 0)
-    # Desenha o botão
-    pygame_menu.draw.rect(screen_resolution, button_color, button_rect)
-    # Adiciona o texto "ON" ou "OFF" ao botão
-    font = get_font(30)
-    text = font.render("ON" if state else "OFF", True, (255, 255, 255))
-    text_rect = text.get_rect(center=button_rect.center)
-    screen_resolution.blit(text, text_rect)
+def draw_device_button(x, y, text, state):
+    button_width, button_height = 250, 80  # Tamanho ajustado dos botões
+    button_rect = pygame.Rect(x, y, button_width, button_height)
+    on_color = (53, 198, 88)  # Cor do botão quando está ligado
+    off_color = (18, 18, 18)  # Cor do botão quando está desligado
+    pygame.draw.rect(screen_resolution, on_color if state else off_color, button_rect)
+    button_text = get_font(20).render(text, True, (255, 255, 255))
+    text_rect = button_text.get_rect(center=button_rect.center)
+    screen_resolution.blit(button_text, text_rect)
 
 def toggle_on_off_button_luminaria():
     global on_off_state_luminaria
@@ -135,21 +136,24 @@ def toggle_on_off_button_porta():
         command = '00000000000000000000'
     mqtt_publish(command, MQTT_TOPIC_PORTA)
 
-def draw_notification(screen_resolution, message):
+def draw_notification(screen_resolution, message, current_language_index):
     # Cria uma superfície para a notificação
-    notification_surface = pygame_menu.Surface((500, 170))
-    notification_surface.fill((200, 200, 200))
+    notification_surface = pygame.Surface((500, 170))
+    notification_surface.fill((18, 18, 18))
 
     # Renderiza o texto
     font = get_font(20)
-    text_surface = font.render(message, True, (0, 0, 0))
+    text_surface = font.render(message, True, (255, 255, 255))
     text_rect = text_surface.get_rect(center=(250, 50))
     notification_surface.blit(text_surface, text_rect)
 
     # Desenha o botão "Sair"
-    button_rect = pygame_menu.Rect(200, 100, 100, 50)
-    pygame_menu.draw.rect(notification_surface, (255, 0, 0), button_rect)
-    button_text_surface = font.render("Sim", True, (255, 255, 255))
+    button_rect = pygame.Rect(200, 100, 100, 50)
+    pygame.draw.rect(notification_surface, (191, 91, 14), button_rect)
+    if(current_language_index == 0):
+        button_text_surface = font.render("Sim", True, (255, 255, 255))
+    elif(current_language_index == 1):
+        button_text_surface = font.render("Yes", True, (255, 255, 255))
     button_text_rect = button_text_surface.get_rect(center=button_rect.center)
     notification_surface.blit(button_text_surface, button_text_rect)
 
@@ -162,8 +166,8 @@ def draw_notification(screen_resolution, message):
 
     return button_rect.move(notification_rect.topleft)  # Retorna a posição real do botão na tela
 
-def main_menu(current_language_index):
-    line_color = pygame_menu.Color('black')
+def main_menu(current_language_index, current_resolution_index, Fullscreen):
+    line_color = pygame.Color('white')
     color_timer = 0
     show_notification = False
     notification_start_time = 0
@@ -171,86 +175,104 @@ def main_menu(current_language_index):
     button_rect = None
 
     while True:
-        MENU_MOUSE_POS = pygame_menu.mouse.get_pos()
+        MENU_MOUSE_POS = pygame.mouse.get_pos()
 
         screen_resolution.blit(BG, (0, 0))
-
-        MENU_TEXT = get_font(125).render("EDEN", True, "#000000")
-        MENU_RECT = MENU_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 4.5))
+        screen_resolution.blit(edenlogo, pygame.Rect(300, 60, 100, 50))
 
         draw_horizontal_line(line_color)
         if(current_language_index == 0):
-            DISPOSITIVOS_BUTTON = Button(image=pygame_menu.image.load("assets/dispositivosrect.png"), pos=(screen_resolution.get_width() * 0.40, screen_resolution.get_height() / 2), 
-                                text_input="Dispositivos", font=get_font(45), base_color="#d7fcd4", hovering_color="White")
-            CONFIG_BUTTON = Button(image=pygame_menu.transform.scale(pygame_menu.image.load("assets/settings.png"), (75,75)), pos=(screen_resolution.get_width() * 0.045, screen_resolution.get_height() / 1.080), 
+            DISPOSITIVOS_BUTTON = Button(image=pygame.image.load("assets/button_dispositivos.png"), pos=(screen_resolution.get_width() * 0.50, screen_resolution.get_height() / 2.3), 
+                                text_input="", font=get_font(45), base_color="#d7fcd4", hovering_color="White")
+            CONFIG_BUTTON = Button(image=pygame.image.load("assets/button_config.png"), pos=(screen_resolution.get_width() * 0.40, screen_resolution.get_height() / 1.125), 
                                 text_input="", font=get_font(75), base_color="#d7fcd4", hovering_color="White")  # Ícone de engrenagem, sem texto
-            HISTORY_BUTTON = Button(image=pygame_menu.transform.scale(pygame_menu.image.load("assets/iconehistorico.png"), (75,75)), pos=(screen_resolution.get_width() * 0.960, screen_resolution.get_height() / 1.080), 
+            HISTORY_BUTTON = Button(image=pygame.image.load("assets/button_historico.png"), pos=(screen_resolution.get_width() * 0.50, screen_resolution.get_height() / 1.6), 
                                 text_input="", font=get_font(75), base_color="#d7fcd4", hovering_color="White") 
-            QUIT_BUTTON = Button(image=pygame_menu.image.load("assets/Sair.png"), pos=(screen_resolution.get_width() * 0.70, screen_resolution.get_height() / 2), 
-                                text_input="Sair", font=get_font(45), base_color="#d7fcd4", hovering_color="White")
+            QUIT_BUTTON = Button(image=pygame.image.load("assets/button_sair.png"), pos=(screen_resolution.get_width() * 0.60, screen_resolution.get_height() / 1.125), 
+                                text_input="", font=get_font(45), base_color="#d7fcd4", hovering_color="White")
 
         elif(current_language_index == 1):
-            DISPOSITIVOS_BUTTON = Button(image=pygame_menu.image.load("assets/dispositivosrect.png"), pos=(screen_resolution.get_width() * 0.40, screen_resolution.get_height() / 2), 
-                                text_input="Devices", font=get_font(45), base_color="#d7fcd4", hovering_color="White")
-            CONFIG_BUTTON = Button(image=pygame_menu.transform.scale(pygame_menu.image.load("assets/settings.png"), (75,75)), pos=(screen_resolution.get_width() * 0.045, screen_resolution.get_height() / 1.080), 
+            DISPOSITIVOS_BUTTON = Button(image=pygame.image.load("assets/button_devices.png"), pos=(screen_resolution.get_width() * 0.50, screen_resolution.get_height() / 2.3), 
+                                text_input="", font=get_font(45), base_color="#d7fcd4", hovering_color="White")
+            CONFIG_BUTTON = Button(image=pygame.image.load("assets/button_config.png"), pos=(screen_resolution.get_width() * 0.40, screen_resolution.get_height() / 1.125), 
                                 text_input="", font=get_font(75), base_color="#d7fcd4", hovering_color="White")  # Ícone de engrenagem, sem texto
-            HISTORY_BUTTON = Button(image=pygame_menu.transform.scale(pygame_menu.image.load("assets/iconehistorico.png"), (75,75)), pos=(screen_resolution.get_width() * 0.960, screen_resolution.get_height() / 1.080), 
+            HISTORY_BUTTON = Button(image=pygame.image.load("assets/button_chat_history.png"), pos=(screen_resolution.get_width() * 0.50, screen_resolution.get_height() / 1.6), 
                                 text_input="", font=get_font(75), base_color="#d7fcd4", hovering_color="White") 
-            QUIT_BUTTON = Button(image=pygame_menu.image.load("assets/Sair.png"), pos=(screen_resolution.get_width() * 0.70, screen_resolution.get_height() / 2), 
-                                text_input="Quit", font=get_font(45), base_color="#d7fcd4", hovering_color="White")
+            QUIT_BUTTON = Button(image=pygame.image.load("assets/button_sair.png"), pos=(screen_resolution.get_width() * 0.60, screen_resolution.get_height() / 1.125), 
+                                text_input="", font=get_font(45), base_color="#d7fcd4", hovering_color="White")
 
-        screen_resolution.blit(MENU_TEXT, MENU_RECT)
 
         for button in [DISPOSITIVOS_BUTTON, CONFIG_BUTTON, QUIT_BUTTON, HISTORY_BUTTON]:
             button.changeColor(MENU_MOUSE_POS)
             button.update(screen_resolution)
 
-        for event in pygame_menu.event.get():
-            if event.type == pygame_menu.QUIT:
-                pygame_menu.quit()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
                 sys.exit()
             if event.type == EDEN_EVENT:
                 line_color = pygame_menu.Color('BLUE')
                 color_timer = pygame_menu.time.get_ticks()
-            if event.type == pygame_menu.KEYDOWN:
-                if event.key == pygame_menu.K_ESCAPE:
-                    pygame_menu.quit()
-                    sys.exit()
-                elif event.key == pygame_menu.K_1:
-                    line_color = pygame_menu.Color('BLUE')
-                    color_timer = pygame_menu.time.get_ticks()
-            if event.type == pygame_menu.MOUSEBUTTONDOWN:
+            if event.type == LUMINARIA:
+                toggle_on_off_button_luminaria()
+                show_notification = True
+                notification_start_time = pygame.time.get_ticks()
+            if event.type == LUZ:
+                toggle_on_off_button_luz()
+                show_notification = True
+                notification_start_time = pygame.time.get_ticks()
+            if event.type == BOMBA_DE_AGUA:
+                toggle_on_off_button_bomba_de_agua()
+                show_notification = True
+                notification_start_time = pygame.time.get_ticks()
+            if event.type == PORTA:
+                toggle_on_off_button_porta()
+                show_notification = True
+                notification_start_time = pygame.time.get_ticks()
+            if event.type == VALVULA:
+                toggle_on_off_button_valvula()
+                show_notification = True
+                notification_start_time = pygame.time.get_ticks()
+            if event.type == pygame.MOUSEBUTTONDOWN:
                 if show_notification and button_rect and button_rect.collidepoint(event.pos):
-                    play(current_language_index)
+                    play(current_language_index, current_resolution_index, Fullscreen)
                 if DISPOSITIVOS_BUTTON.checkForInput(MENU_MOUSE_POS):
-                    play(current_language_index)
+                    play(current_language_index, current_resolution_index, Fullscreen)
                 if CONFIG_BUTTON.checkForInput(MENU_MOUSE_POS):
-                    config(current_language_index)
+                    config(screen_resolution, current_language_index, current_resolution_index, Fullscreen)
                 if HISTORY_BUTTON.checkForInput(MENU_MOUSE_POS):
-                    history(current_language_index)
+                    history(current_language_index, current_resolution_index, Fullscreen)
                 if QUIT_BUTTON.checkForInput(MENU_MOUSE_POS):
-                    pygame_menu.quit()
+                    pygame.quit()
                     sys.exit()
         if show_notification:
-            current_time = pygame_menu.time.get_ticks()
+            current_time = pygame.time.get_ticks()
             if current_time - notification_start_time < notification_duration:
-                button_rect = draw_notification(screen_resolution, "Dispositivo ativado! Deseja conferir?")
+                if(current_language_index == 0):
+                    button_rect = draw_notification(screen_resolution, "Dispositivo ativado! Deseja conferir?", current_language_index)
+                elif(current_language_index == 1):
+                    button_rect = draw_notification(screen_resolution, "Device activated! Do you wish to confirm?", current_language_index)
             else:
                 show_notification = False  # Oculta a notificação após a duração especificada
 
-        if pygame_menu.time.get_ticks() - color_timer >= 4000:
-            line_color = pygame_menu.Color('black')
+        if pygame.time.get_ticks() - color_timer >= 4000:
+            line_color = pygame.Color('white')
 
-        pygame_menu.display.update()
+        pygame.display.update()
 
-def play(current_language_index):
-    line_color = pygame_menu.Color('black')
+def play(current_language_index, current_resolution_index, Fullscreen):
+    line_color = pygame.Color('white')
     color_timer = 0
-    
-    while True:
-        PLAY_MOUSE_POS = pygame_menu.mouse.get_pos()
 
-        screen_resolution.fill("#FFF4EE")
+    while True:
+        PLAY_MOUSE_POS = pygame.mouse.get_pos()
+
+        screen_resolution.fill("#F2F1F1")
+
+        if current_language_index == 0:
+            screen_resolution.blit(Devices, pygame.Rect(300, 35, 100, 50))
+        else:
+            screen_resolution.blit(Devices, pygame.Rect(350, 35, 100, 50))
 
         draw_horizontal_line(line_color)
 
@@ -260,91 +282,57 @@ def play(current_language_index):
 
         if (current_language_index == 0):
 
-            PLAY_TEXT = get_font(75).render("Dispositivos", True, "Black")
-            PLAY_RECT = PLAY_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 11))
+            LUMINARIA_BUTTON_TEXT = "Luminária"
+            BOMBA_BUTTON_TEXT = "Bomba de água"
+            PORTA_BUTTON_TEXT = "Porta"
+            LUZ_BUTTON_TEXT = "Luz"
+            VALVULA_BUTTON_TEXT = "Válvula"
+
+            PLAY_TEXT = get_font(55).render("Dispositivos", True, "#1A1A1A")
+            PLAY_RECT = PLAY_TEXT.get_rect(center=(screen_resolution.get_width() / 1.9, screen_resolution.get_height() / 11))
             screen_resolution.blit(PLAY_TEXT, PLAY_RECT)
-            # Desenha o botão on/off para a luminaria
-            draw_on_off_button(button_x, button_y_start, on_off_state_luminaria)
-            luminaria_text = get_font(40).render("Luminaria", True, (0, 0, 0))
-            screen_resolution.blit(luminaria_text, (button_x + 90, button_y_start - 5))
 
-            # Desenha o botão on/off para a luz
-            draw_on_off_button(button_x, button_y_start + 70, on_off_state_luz)
-            luz_text = get_font(40).render("Luz", True, (0, 0, 0))
-            screen_resolution.blit(luz_text, (button_x + 90, button_y_start + 65))
 
-            # Desenha o botão on/off para o bomba_de_agua
-            draw_on_off_button(button_x, button_y_start + 140, on_off_state_bomba_de_agua)
-            bomba_de_agua_text = get_font(40).render("Bomba de Água", True, (0, 0, 0))
-            screen_resolution.blit(bomba_de_agua_text, (button_x + 90, button_y_start + 140))
-
-            # Desenha o botão on/off para o termômetro
-            draw_on_off_button(button_x, button_y_start + 210, on_off_state_valvula)
-            valvula_text = get_font(40).render("Válvula", True, (0, 0, 0))
-            screen_resolution.blit(valvula_text, (button_x + 90, button_y_start + 210))
-
-            # Desenha o botão on/off para o porta
-            draw_on_off_button(button_x, button_y_start + 280, on_off_state_porta)
-            porta_text = get_font(40).render("Porta", True, (0, 0, 0))
-            screen_resolution.blit(porta_text, (button_x + 90, button_y_start + 280))
-
-            PLAY_BACK = Button(image=None, pos=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 1.2), 
-                                text_input="Voltar", font=get_font(75), base_color="Black", hovering_color="Green")
+            PLAY_BACK = Button(image=pygame.image.load("assets/button_voltar.png"), pos=(screen_resolution.get_width() / 7.5, screen_resolution.get_height() / 1.1), 
+                                text_input="", font=get_font(75), base_color="Black", hovering_color="Green")
 
         elif (current_language_index == 1):
 
-            PLAY_TEXT = get_font(75).render("Devices", True, "Black")
-            PLAY_RECT = PLAY_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 11))
+            LUMINARIA_BUTTON_TEXT = "Lamp"
+            BOMBA_BUTTON_TEXT = "Water Pump"
+            PORTA_BUTTON_TEXT = "Door"
+            LUZ_BUTTON_TEXT = "Light"
+            VALVULA_BUTTON_TEXT = "Valve"
+
+            PLAY_TEXT = get_font(55).render("Devices", True, "#1A1A1A")
+            PLAY_RECT = PLAY_TEXT.get_rect(center=(screen_resolution.get_width() / 1.9, screen_resolution.get_height() / 11))
             screen_resolution.blit(PLAY_TEXT, PLAY_RECT)
-            # Desenha o botão on/off para a luminaria
-            draw_on_off_button(button_x, button_y_start, on_off_state_luminaria)
-            luminaria_text = get_font(40).render("Luminaria", True, (0, 0, 0))
-            screen_resolution.blit(luminaria_text, (button_x + 90, button_y_start - 5))
 
-            # Desenha o botão on/off para a luz
-            draw_on_off_button(button_x, button_y_start + 70, on_off_state_luz)
-            luz_text = get_font(40).render("Luz", True, (0, 0, 0))
-            screen_resolution.blit(luz_text, (button_x + 90, button_y_start + 65))
+            PLAY_BACK = Button(image=pygame.image.load("assets/button_back.png"), pos=(screen_resolution.get_width() / 7.5, screen_resolution.get_height() / 1.1), 
+                                text_input="", font=get_font(75), base_color="Black", hovering_color="Green")
 
-            # Desenha o botão on/off para o bomba_de_agua
-            draw_on_off_button(button_x, button_y_start + 140, on_off_state_bomba_de_agua)
-            bomba_de_agua_text = get_font(40).render("Bomba de agua", True, (0, 0, 0))
-            screen_resolution.blit(bomba_de_agua_text, (button_x + 90, button_y_start + 140))
+        horizontal_spacing = 50
+        vertical_spacing = 30
 
-            # Desenha o botão on/off para o termômetro
-            draw_on_off_button(button_x, button_y_start + 210, on_off_state_valvula)
-            valvula_text = get_font(40).render("valvula", True, (0, 0, 0))
-            screen_resolution.blit(valvula_text, (button_x + 90, button_y_start + 210))
+        button_positions = [
+            (screen_resolution.get_width() / 2 - 1.5 * (235 + horizontal_spacing), 200),  # Luminária
+            (screen_resolution.get_width() / 2 - 0.5 * (205 + horizontal_spacing), 200),  # Bomba de água
+            (screen_resolution.get_width() / 2 + 0.5 * (300 + horizontal_spacing), 200),  # Porta
+            (screen_resolution.get_width() / 2 - 1 * (250 + horizontal_spacing / 2), 200 + 80 + vertical_spacing),  # Luz
+            (screen_resolution.get_width() / 2 + 1 * (5 + horizontal_spacing / 2), 200 + 80 + vertical_spacing)   # Válvula
+        ]
 
-            # Desenha o botão on/off para o porta
-            draw_on_off_button(button_x, button_y_start + 280, on_off_state_porta)
-            porta_text = get_font(40).render("Porta", True, (0, 0, 0))
-            screen_resolution.blit(porta_text, (button_x + 90, button_y_start + 280))
+        draw_device_button(*button_positions[0], LUMINARIA_BUTTON_TEXT, on_off_state_luminaria)
+        draw_device_button(*button_positions[1], BOMBA_BUTTON_TEXT, on_off_state_bomba_de_agua)
+        draw_device_button(*button_positions[2], PORTA_BUTTON_TEXT, on_off_state_porta)
+        draw_device_button(*button_positions[3], LUZ_BUTTON_TEXT, on_off_state_luz)
+        draw_device_button(*button_positions[4], VALVULA_BUTTON_TEXT, on_off_state_valvula)
 
-            PLAY_BACK = Button(image=None, pos=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 1.2), 
-                                text_input="Back", font=get_font(75), base_color="Black", hovering_color="Green")
-
-        SETTINGS_luminaria = Button(image=pygame_menu.transform.scale(pygame_menu.image.load("assets/info.png"), (48,48)), pos=(screen_resolution.get_width() / 1.40, screen_resolution.get_height() / 4.3), 
-                            text_input="", font=get_font(75), base_color="Black", hovering_color="Green")
-
-        SETTINGS_luz = Button(image=pygame_menu.transform.scale(pygame_menu.image.load("assets/info.png"), (48,48)), pos=(screen_resolution.get_width() / 1.40, screen_resolution.get_height() / 2.80), 
-                            text_input="", font=get_font(75), base_color="Black", hovering_color="Green")
-
-        SETTINGS_bomba_de_agua = Button(image=pygame_menu.transform.scale(pygame_menu.image.load("assets/info.png"), (48,48)), pos=(screen_resolution.get_width() / 1.40, screen_resolution.get_height() / 2.1), 
-                            text_input="", font=get_font(75), base_color="Black", hovering_color="Green")
-        SETTINGS_valvula = Button(image=pygame_menu.transform.scale(pygame_menu.image.load("assets/info.png"), (48,48)), pos=(screen_resolution.get_width() / 1.40, screen_resolution.get_height() / 1.70), 
-                            text_input="", font=get_font(75), base_color="Black", hovering_color="Green")
-        SETTINGS_porta = Button(image=pygame_menu.transform.scale(pygame_menu.image.load("assets/info.png"), (48,48)), pos=(screen_resolution.get_width() / 1.40, screen_resolution.get_height() / 1.42), 
-                            text_input="", font=get_font(75), base_color="Black", hovering_color="Green")
-
-        for button in [PLAY_BACK, SETTINGS_luminaria, SETTINGS_luz, SETTINGS_bomba_de_agua, SETTINGS_valvula, SETTINGS_porta]:
+        for button in [PLAY_BACK]:
             button.changeColor(PLAY_MOUSE_POS)
             button.update(screen_resolution)
 
-        for event in pygame_menu.event.get():
-            if event.type == pygame_menu.QUIT:
-                pygame_menu.quit()
-                sys.exit()
+        for event in pygame.event.get():
             if event.type == EDEN_EVENT:
                 line_color = pygame_menu.Color('BLUE')
                 color_timer = pygame_menu.time.get_ticks()
@@ -358,478 +346,207 @@ def play(current_language_index):
                 toggle_on_off_button_porta()
             if event.type == VALVULA:
                 toggle_on_off_button_valvula()
-            if event.type == pygame_menu.MOUSEBUTTONDOWN:
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
                 if PLAY_BACK.checkForInput(PLAY_MOUSE_POS):
-                    main_menu(current_language_index)
-                if SETTINGS_luminaria.checkForInput(PLAY_MOUSE_POS):
-                    options(current_language_index)
-                if SETTINGS_luz.checkForInput(PLAY_MOUSE_POS):
-                    options(current_language_index)
-                if SETTINGS_bomba_de_agua.checkForInput(PLAY_MOUSE_POS):
-                    options(current_language_index)
-                if SETTINGS_valvula.checkForInput(PLAY_MOUSE_POS):
-                    options(current_language_index)
-                if SETTINGS_porta.checkForInput(PLAY_MOUSE_POS):
-                    options(current_language_index)
-                # Verifica se o botão on/off da luminaria foi clicado
-                if pygame_menu.Rect(button_x, button_y_start, 70, 35).collidepoint(event.pos):
+                    main_menu(current_language_index, current_resolution_index, Fullscreen)
+                if pygame.Rect(*button_positions[0], 250, 80).collidepoint(event.pos):
                     toggle_on_off_button_luminaria()
-                # Verifica se o botão on/off da luz foi clicado
-                elif pygame_menu.Rect(button_x, button_y_start + 70, 100, 50).collidepoint(event.pos):
-                    toggle_on_off_button_luz()
-                # Verifica se o botão on/off do bomba_de_agua foi clicado
-                elif pygame_menu.Rect(button_x, button_y_start + 140, 100, 50).collidepoint(event.pos):
+                elif pygame.Rect(*button_positions[1], 250, 80).collidepoint(event.pos):
                     toggle_on_off_button_bomba_de_agua()
-                # Verifica se o botão on/off do termômetro foi clicado
-                elif pygame_menu.Rect(button_x, button_y_start + 210, 100, 50).collidepoint(event.pos):
-                    toggle_on_off_button_valvula()
-                # Verifica se o botão on/off do porta foi clicado
-                elif pygame_menu.Rect(button_x, button_y_start + 280, 100, 50).collidepoint(event.pos):
+                elif pygame.Rect(*button_positions[2], 250, 80).collidepoint(event.pos):
                     toggle_on_off_button_porta()
+                elif pygame.Rect(*button_positions[3], 250, 80).collidepoint(event.pos):
+                    toggle_on_off_button_luz()
+                elif pygame.Rect(*button_positions[4], 250, 80).collidepoint(event.pos):
+                    toggle_on_off_button_valvula()
 
-        if pygame_menu.time.get_ticks() - color_timer >= 4000:
-            line_color = pygame_menu.Color('black')
+        pygame.display.update()
 
-        pygame_menu.display.update()
+        if pygame.time.get_ticks() - color_timer >= 4000:
+            line_color = pygame.Color('white')
 
-def config(current_language_index):
+        pygame.display.update()
+
+def config(screen_resolution, current_language_index, current_resolution_index, Fullscreen):
+
+    dropdown_open_resolution = False
+    dropdown_open_language = False
+
+    resolutions = [(800, 600), (1024, 600), (1280, 720), "Fullscreen"]
+    languages = ["Português (BR)", "English"]
+
+    selected_resolution = resolutions[current_resolution_index]
+    selected_language = languages[current_language_index]
+
+    font = get_font(30)
+
     while True:
-        CONFIG_MOUSE_POS = pygame_menu.mouse.get_pos()
 
-        screen_resolution.fill("#FFF4EE")
-        if(current_language_index == 0):
+        CONFIG_MOUSE_POS = pygame.mouse.get_pos()
 
-            CONFIG_TEXT = get_font(75).render("Configurações", True, "Black")
-            CONFIG_RECT = CONFIG_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 8))
-            screen_resolution.blit(CONFIG_TEXT, CONFIG_RECT)
-            LANGUAGE_BUTTON = Button(image=None, pos=(screen_resolution.get_width() / 2.14, screen_resolution.get_height() * 0.45), 
-                                text_input="Idioma", font=get_font(75), base_color="Black", hovering_color="White")
-            RESOLUTION_BUTTON = Button(image=None, pos=(screen_resolution.get_width() / 2, screen_resolution.get_height() * 0.3), 
-                                    text_input="Resolução", font=get_font(75), base_color="Black", hovering_color="White")
-            CONFIG_BACK = Button(image=None, pos=(screen_resolution.get_width() / 2, screen_resolution.get_height() * 0.9), 
-                                text_input="Voltar", font=get_font(75), base_color="Black", hovering_color="White")
+        screen_resolution.fill("#F2F1F1")
 
-        if(current_language_index == 1):
+        if current_language_index == 0:
+            screen_resolution.blit(Settings, pygame.Rect(300, 60, 100, 50))
+        else:
+            screen_resolution.blit(Settings, pygame.Rect(380, 60, 100, 50))
 
-            CONFIG_TEXT = get_font(75).render("Settings", True, "Black")
-            CONFIG_RECT = CONFIG_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 8))
-            screen_resolution.blit(CONFIG_TEXT, CONFIG_RECT)
-            LANGUAGE_BUTTON = Button(image=None, pos=(screen_resolution.get_width() / 2.14, screen_resolution.get_height() * 0.45), 
-                                text_input="Language", font=get_font(75), base_color="Black", hovering_color="White")
-            RESOLUTION_BUTTON = Button(image=None, pos=(screen_resolution.get_width() / 2.10, screen_resolution.get_height() * 0.3), 
-                                    text_input="Resolution", font=get_font(75), base_color="Black", hovering_color="White")
-            CONFIG_BACK = Button(image=None, pos=(screen_resolution.get_width() / 2, screen_resolution.get_height() * 0.9), 
-                                text_input="Back", font=get_font(75), base_color="Black", hovering_color="White")
+        # Texto de Configurações
+        config_texts = {
+            0: ("Configurações", "Resolução", "Idioma", "Voltar"),
+            1: ("Settings", "Resolution", "Language", "Back")
+        }
+        current_texts = config_texts[current_language_index]
 
-        for button in [LANGUAGE_BUTTON, RESOLUTION_BUTTON, CONFIG_BACK]:
-            button.changeColor(CONFIG_MOUSE_POS)
-            button.update(screen_resolution)
+        CONFIG_TEXT = get_font(55).render(current_texts[0], True, "#1A1A1A")
+        CONFIG_RECT = CONFIG_TEXT.get_rect(center=(screen_resolution.get_width() / 1.8, screen_resolution.get_height() / 8))
+        screen_resolution.blit(CONFIG_TEXT, CONFIG_RECT)
 
-        for event in pygame_menu.event.get():
-            if event.type == pygame_menu.QUIT:
-                pygame_menu.quit()
+        LANGUAGE_TEXT = get_font(20).render(current_texts[1], True, "#1A1A1A")
+        LANGUAGE_RECT = LANGUAGE_TEXT.get_rect(center=(screen_resolution.get_width() / 6.5, screen_resolution.get_height() / 3.6))
+        screen_resolution.blit(LANGUAGE_TEXT, LANGUAGE_RECT)
+
+        LANGUAGE_TEXT = get_font(20).render(current_texts[2], True, "#1A1A1A")
+        LANGUAGE_RECT = LANGUAGE_TEXT.get_rect(center=(screen_resolution.get_width() / 1.55, screen_resolution.get_height() / 3.6))
+        screen_resolution.blit(LANGUAGE_TEXT, LANGUAGE_RECT)
+
+        # Dropdown de Resolução
+        resolution_rect = pygame.Rect(screen_resolution.get_width() / 4 - 150, screen_resolution.get_height() * 0.3, 300, 50)
+        pygame.draw.rect(screen_resolution, (169, 169, 169), resolution_rect)
+        if Fullscreen:
+            res_text = font.render("Tela Cheia" if current_language_index == 0 else "Fullscreen", True, (0, 0, 0))
+        else:
+            Fullscreen = 0
+            res_text = font.render(f"{selected_resolution[0]} x {selected_resolution[1]}", True, (0, 0, 0))
+        res_text_rect = res_text.get_rect(center=(resolution_rect.centerx, resolution_rect.centery))
+        screen_resolution.blit(res_text, res_text_rect)
+
+        # Dropdown de Idioma
+        language_rect = pygame.Rect(screen_resolution.get_width() * 3 / 4 - 150, screen_resolution.get_height() * 0.3, 300, 50)
+        pygame.draw.rect(screen_resolution, (169, 169, 169), language_rect)
+        lang_text = font.render(selected_language, True, (0, 0, 0))
+        lang_text_rect = lang_text.get_rect(center=(language_rect.centerx, language_rect.centery))
+        screen_resolution.blit(lang_text, lang_text_rect)
+
+        # Botão Voltar
+        if current_language_index == 0:
+            CONFIG_BACK = Button(image=pygame.image.load("assets/button_voltar.png"), pos=(screen_resolution.get_width() / 7.5, screen_resolution.get_height() * 0.9), 
+                                text_input="", font=get_font(75), base_color="Black", hovering_color="White")
+            CONFIG_BACK.changeColor(CONFIG_MOUSE_POS)
+            CONFIG_BACK.update(screen_resolution)
+        else:
+            CONFIG_BACK = Button(image=pygame.image.load("assets/button_back.png"), pos=(screen_resolution.get_width() / 7.5, screen_resolution.get_height() * 0.9), 
+                                text_input="", font=get_font(75), base_color="Black", hovering_color="White")
+            CONFIG_BACK.changeColor(CONFIG_MOUSE_POS)
+            CONFIG_BACK.update(screen_resolution)
+
+        # Desenhar as opções de resolução no dropdown se aberto
+        if dropdown_open_resolution:
+            for i, res in enumerate(resolutions):
+                option_rect = pygame.Rect(resolution_rect.x, resolution_rect.y + (i + 1) * resolution_rect.height, resolution_rect.width, resolution_rect.height)
+                pygame.draw.rect(screen_resolution, (211, 211, 211), option_rect)
+                if res == "Fullscreen":
+                    option_text = font.render("Tela Cheia" if current_language_index == 0 else "Fullscreen", True, (0, 0, 0))
+                else:
+                    option_text = font.render(f"{res[0]} x {res[1]}", True, (0, 0, 0))
+                option_text_rect = option_text.get_rect(center=(option_rect.centerx, option_rect.centery))
+                screen_resolution.blit(option_text, option_text_rect)
+
+        # Desenhar as opções de idioma no dropdown se aberto
+        if dropdown_open_language:
+            for i, lang in enumerate(languages):
+                option_rect = pygame.Rect(language_rect.x, language_rect.y + (i + 1) * language_rect.height, language_rect.width, language_rect.height)
+                pygame.draw.rect(screen_resolution, (211, 211, 211), option_rect)
+                option_text = font.render(lang, True, (0, 0, 0))
+                option_text_rect = option_text.get_rect(center=(option_rect.centerx, option_rect.centery))
+                screen_resolution.blit(option_text, option_text_rect)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
                 sys.exit()
-            if event.type == pygame_menu.MOUSEBUTTONDOWN:
-                if LANGUAGE_BUTTON.checkForInput(CONFIG_MOUSE_POS):
-                    language_settings(current_language_index)
-                if RESOLUTION_BUTTON.checkForInput(CONFIG_MOUSE_POS):
-                    resolution_settings(screen_resolution, current_resolution_index, Fullscreen, current_language_index)
+            if event.type == pygame.MOUSEBUTTONDOWN:
                 if CONFIG_BACK.checkForInput(CONFIG_MOUSE_POS):
-                    main_menu(current_language_index)  
+                    main_menu(current_language_index, current_resolution_index, Fullscreen)
+                if resolution_rect.collidepoint(event.pos):
+                    dropdown_open_resolution = not dropdown_open_resolution
+                    dropdown_open_language = False
+                elif language_rect.collidepoint(event.pos):
+                    dropdown_open_language = not dropdown_open_language
+                    dropdown_open_resolution = False
+                else:
+                    if dropdown_open_resolution:
+                        for i, res in enumerate(resolutions):
+                            option_rect = pygame.Rect(resolution_rect.x, resolution_rect.y + (i + 1) * resolution_rect.height, resolution_rect.width, resolution_rect.height)
+                            if option_rect.collidepoint(event.pos):
+                                selected_resolution = res
+                                current_resolution_index = i
+                                dropdown_open_resolution = False
+                                if res == "Fullscreen":
+                                    Fullscreen = 1
+                                    screen_resolution = pygame.display.set_mode((1024, 600), pygame.FULLSCREEN)
+                                else:
+                                    Fullscreen = 0
+                                    screen_resolution = pygame.display.set_mode(res)
+                                break
+                    if dropdown_open_language:
+                        for i, lang in enumerate(languages):
+                            option_rect = pygame.Rect(language_rect.x, language_rect.y + (i + 1) * language_rect.height, language_rect.width, language_rect.height)
+                            if option_rect.collidepoint(event.pos):
+                                selected_language = lang
+                                current_language_index = i
+                                dropdown_open_language = False
+                                break
 
-        pygame_menu.display.update()
+        pygame.display.update()
 
+def history(current_language_index, current_resolution_index, Fullscreen):
 
-def volume_settings():
+    Data_historico = pygame.image.load('assets/7_junho_data.png')
+    Historico_exemplo = pygame.image.load('assets/historico_eden_exemplo.png')
+
     while True:
-        VOLUME_MOUSE_POS = pygame_menu.mouse.get_pos()
+        SPEC1_MOUSE_POS = pygame.mouse.get_pos()
 
-        screen_resolution.fill("#FFF4EE")
+        screen_resolution.fill("#F2F1F1")
 
-        VOLUME_TEXT = get_font(45).render("Volume", True, "Black")
-        VOLUME_RECT = VOLUME_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 3))
-        screen_resolution.blit(VOLUME_TEXT, VOLUME_RECT)
-
-        # Implementar controles de volume aqui
-
-        VOLUME_BACK = Button(image=None, pos=(screen_resolution.get_width() / 2, screen_resolution.get_height() * 0.9), 
-                             text_input="Voltar", font=get_font(75), base_color="Black", hovering_color="White")
-
-        VOLUME_BACK.changeColor(VOLUME_MOUSE_POS)
-        VOLUME_BACK.update(screen_resolution)
-
-        for event in pygame_menu.event.get():
-            if event.type == pygame_menu.QUIT:
-                pygame_menu.quit()
-                sys.exit()
-            if event.type == pygame_menu.MOUSEBUTTONDOWN:
-                if VOLUME_BACK.checkForInput(VOLUME_MOUSE_POS):
-                    config(current_language_index)  
-
-        pygame_menu.display.update()
-
-def resolution_settings(screen_resolution, current_resolution_index, Fullscreen, current_language_index):
-    while True:
-        RESOLUTION_MOUSE_POS = pygame_menu.mouse.get_pos()
-
-        screen_resolution.fill("#FFF4EE")
-        if(current_language_index == 0):
-            CONFIG_TEXT = get_font(75).render("Configurações", True, "Black")
-            CONFIG_RECT = CONFIG_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 8))
-            screen_resolution.blit(CONFIG_TEXT, CONFIG_RECT)
-
-            RESOLUTION_TEXT = get_font(75).render("Resolução", True, "Black")
-            RESOLUTION_RECT = RESOLUTION_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() * 0.3))
-            screen_resolution.blit(RESOLUTION_TEXT, RESOLUTION_RECT)
-
-            # Botão "Voltar"
-            RESOLUTION_BACK = Button(image=None, pos=(screen_resolution.get_width() / 2, screen_resolution.get_height() * 0.9), 
-                                    text_input="Voltar", font=get_font(75), base_color="Black", hovering_color="White")
-            RESOLUTION_BACK.changeColor(RESOLUTION_MOUSE_POS)
-            RESOLUTION_BACK.update(screen_resolution)
-
-        elif(current_language_index == 1):
-            CONFIG_TEXT = get_font(75).render("Settings", True, "Black")
-            CONFIG_RECT = CONFIG_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 8))
-            screen_resolution.blit(CONFIG_TEXT, CONFIG_RECT)
-
-            RESOLUTION_TEXT = get_font(75).render("Resolution", True, "Black")
-            RESOLUTION_RECT = RESOLUTION_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() * 0.3))
-            screen_resolution.blit(RESOLUTION_TEXT, RESOLUTION_RECT)
-
-            # Botão "Voltar"
-            RESOLUTION_BACK = Button(image=None, pos=(screen_resolution.get_width() / 2, screen_resolution.get_height() * 0.9), 
-                                    text_input="Back", font=get_font(75), base_color="Black", hovering_color="White")
-            RESOLUTION_BACK.changeColor(RESOLUTION_MOUSE_POS)
-            RESOLUTION_BACK.update(screen_resolution)
-
-        font = get_font(30)
-        y_offset = screen_resolution.get_height() * 0.4
-        for i, res in enumerate(resolutions):
-            color = (pygame_menu.Color("BLACK"))
-            if res == "Fullscreen":
-                res_text = font.render("Tela Cheia", True, color)
-            else:
-                res_text = font.render(f"{res[0]} x {res[1]}", True, color)
-            
-            # Coordenadas da caixa de seleção e do "x"
-            checkbox_x = screen_resolution.get_width() / 2 - 150
-            checkbox_y = y_offset
-            x_mark_x = checkbox_x + 5
-            x_mark_y = checkbox_y + 5
-            
-            # Caixa de seleção
-            checkbox_rect = pygame_menu.Rect(checkbox_x, checkbox_y, 20, 20)
-            pygame_menu.draw.rect(screen_resolution, color, checkbox_rect, 2)
-            
-            # Marcar caixa de seleção se for a resolução atual
-            if i == current_resolution_index and Fullscreen == 0:
-                pygame_menu.draw.line(screen_resolution, color, (x_mark_x, x_mark_y), (x_mark_x + 10, x_mark_y + 10), 2)
-                pygame_menu.draw.line(screen_resolution, color, (x_mark_x + 10, x_mark_y), (x_mark_x, x_mark_y + 10), 2)
-            if Fullscreen == 1 and res == "Fullscreen":
-                pygame_menu.draw.line(screen_resolution, color, (x_mark_x, x_mark_y), (x_mark_x + 10, x_mark_y + 10), 2)
-                pygame_menu.draw.line(screen_resolution, color, (x_mark_x + 10, x_mark_y), (x_mark_x, x_mark_y + 10), 2)
-            
-            screen_resolution.blit(res_text, (checkbox_x + 30, checkbox_y - 5))
-            y_offset += 40
-        
-
-        for event in pygame_menu.event.get():
-            if event.type == pygame_menu.QUIT:
-                pygame_menu.quit()
-                sys.exit()
-            if event.type == pygame_menu.MOUSEBUTTONDOWN:
-                if RESOLUTION_BACK.checkForInput(RESOLUTION_MOUSE_POS):
-                    # Retorna à tela de configurações
-                    config(current_language_index)
-                if event.button == 1:  # Clique com o botão esquerdo do mouse
-                    mouse_pos = event.pos
-                    selected_index = check_selection_resolution(mouse_pos, screen_resolution.get_height() * 0.4, len(resolutions))
-                    if resolutions[selected_index] == "Fullscreen":
-                        Fullscreen = 1
-                        screen_resolution = pygame_menu.display.set_mode((0, 0), pygame_menu.FULLSCREEN)
-                    else:
-                        Fullscreen = 0
-                        current_resolution_index = selected_index
-                        screen_resolution = pygame_menu.display.set_mode(resolutions[current_resolution_index])
-        pygame_menu.display.update()
-
-def language_settings(current_language_index):
-    while True:
-        LANG_MOUSE_POS = pygame_menu.mouse.get_pos()
-
-        screen_resolution.fill("#FFF4EE")
+        screen_resolution.blit(Data_historico, pygame.Rect(38, 150, 100, 50))
+        screen_resolution.blit(Historico_exemplo, pygame.Rect(320, 200, 100, 50))
 
         if current_language_index == 0:
-            CONFIG_TEXT = get_font(75).render("Configurações", True, "Black")
-            CONFIG_RECT = CONFIG_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 8))
-            screen_resolution.blit(CONFIG_TEXT, CONFIG_RECT)
-        
-            LANG_TEXT = get_font(75).render("Idioma", True, "Black")
-            LANG_RECT = LANG_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() * 0.3))
-            screen_resolution.blit(LANG_TEXT, LANG_RECT)
-            # Botão "Voltar"
-            LANG_BACK = Button(image=None, pos=(screen_resolution.get_width() / 2, screen_resolution.get_height() * 0.9), 
-                                    text_input="Voltar", font=get_font(75), base_color="Black", hovering_color="White")
-            LANG_BACK.changeColor(LANG_MOUSE_POS)
-            LANG_BACK.update(screen_resolution)
-
-        elif current_language_index == 1:
-            CONFIG_TEXT = get_font(75).render("Settings", True, "Black")
-            CONFIG_RECT = CONFIG_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 8))
-            screen_resolution.blit(CONFIG_TEXT, CONFIG_RECT)
-
-            LANG_TEXT = get_font(75).render("Language", True, "Black")
-            LANG_RECT = LANG_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() * 0.3))
-            screen_resolution.blit(LANG_TEXT, LANG_RECT)
-
-            LANG_BACK = Button(image=None, pos=(screen_resolution.get_width() / 2, screen_resolution.get_height() * 0.9), 
-                                    text_input="Back", font=get_font(75), base_color="Black", hovering_color="White")
-            LANG_BACK.changeColor(LANG_MOUSE_POS)
-            LANG_BACK.update(screen_resolution)
-
-        font = get_font(30)
-        y_offset = screen_resolution.get_height() * 0.4
-        languages = ["Português (BR)", "English"]
-        checkbox_areas = []
-        for i, lang in enumerate(languages):
-            color = (pygame_menu.Color("BLACK"))
-            lang_text = font.render(lang, True, color)
-
-            # Coordenadas da caixa de seleção
-            checkbox_x = screen_resolution.get_width() / 2 - 150
-            checkbox_y = y_offset
-
-            # Caixa de seleção
-            checkbox_rect = pygame_menu.Rect(checkbox_x, checkbox_y, 20, 20)
-            pygame_menu.draw.rect(screen_resolution, color, checkbox_rect, 2)
-
-            # Marcar caixa de seleção se for o idioma atual
-            if i == current_language_index:
-                pygame_menu.draw.line(screen_resolution, color, (checkbox_x + 5, checkbox_y + 5), (checkbox_x + 15, checkbox_y + 15), 2)
-                pygame_menu.draw.line(screen_resolution, color, (checkbox_x + 15, checkbox_y + 5), (checkbox_x + 5, checkbox_y + 15), 2)
-
-            screen_resolution.blit(lang_text, (checkbox_x + 30, checkbox_y - 5))
-            y_offset += 40
-
-            checkbox_areas.append(checkbox_rect)
-
-        for event in pygame_menu.event.get():
-            if event.type == pygame_menu.QUIT:
-                pygame_menu.quit()
-                sys.exit()
-            if event.type == pygame_menu.MOUSEBUTTONDOWN:
-                if LANG_BACK.checkForInput(LANG_MOUSE_POS):
-                    # Retorna à tela de configurações
-                    config(current_language_index)
-                if event.button == 1:  # Clique com o botão esquerdo do mouse
-                    mouse_pos = event.pos
-                    for i, checkbox_rect in enumerate(checkbox_areas):
-                        if checkbox_rect.collidepoint(mouse_pos):
-                            current_language_index = i
-                            break
-
-        pygame_menu.display.update()
-
-def history(current_language_index):
-    while True:
-        SPEC1_MOUSE_POS = pygame_menu.mouse.get_pos()
-
-        screen_resolution.fill("#FFF4EE")
-        if current_language_index == 0:
-            SPEC1_TEXT = get_font(75).render("Histórico", True, "Black")
-            SPEC1_RECT = SPEC1_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 8))
+            SPEC1_TEXT = get_font(35).render("Histórico do Chat", True, "#1A1A1A")
+            SPEC1_RECT = SPEC1_TEXT.get_rect(center=(screen_resolution.get_width() / 6.2, screen_resolution.get_height() / 8))
             screen_resolution.blit(SPEC1_TEXT, SPEC1_RECT)
 
-            SPEC1_BACK = Button(image=None, pos=(screen_resolution.get_width() / 2, screen_resolution.get_height() * 0.9), 
-                            text_input="Voltar", font=get_font(75), base_color="Black", hovering_color="White")
+            SPEC1_BACK = Button(image=pygame.image.load("assets/button_voltar.png"), pos=(screen_resolution.get_width() / 7.5, screen_resolution.get_height() / 1.1), 
+                                text_input="", font=get_font(75), base_color="Black", hovering_color="Green")
 
             SPEC1_BACK.changeColor(SPEC1_MOUSE_POS)
             SPEC1_BACK.update(screen_resolution)
 
         elif current_language_index == 1:
-            SPEC1_TEXT = get_font(75).render("History", True, "Black")
-            SPEC1_RECT = SPEC1_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 8))
+            SPEC1_TEXT = get_font(35).render("Chat History", True, "#1A1A1A")
+            SPEC1_RECT = SPEC1_TEXT.get_rect(center=(screen_resolution.get_width() / 6.2, screen_resolution.get_height() / 8))
             screen_resolution.blit(SPEC1_TEXT, SPEC1_RECT)
 
-            SPEC1_BACK = Button(image=None, pos=(screen_resolution.get_width() / 2, screen_resolution.get_height() * 0.9), 
-                            text_input="Back", font=get_font(75), base_color="Black", hovering_color="White")
+            SPEC1_BACK = Button(image=pygame.image.load("assets/button_back.png"), pos=(screen_resolution.get_width() / 7.5, screen_resolution.get_height() * 0.9), 
+                                text_input="", font=get_font(75), base_color="Black", hovering_color="White")
 
             SPEC1_BACK.changeColor(SPEC1_MOUSE_POS)
             SPEC1_BACK.update(screen_resolution)
 
-
-
-        for event in pygame_menu.event.get():
-            if event.type == pygame_menu.QUIT:
-                pygame_menu.quit()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
                 sys.exit()
-            if event.type == pygame_menu.MOUSEBUTTONDOWN:
+            if event.type == pygame.MOUSEBUTTONDOWN:
                 if SPEC1_BACK.checkForInput(SPEC1_MOUSE_POS):
-                    main_menu(current_language_index)  
+                    main_menu(current_language_index, current_resolution_index, Fullscreen)
 
-        pygame_menu.display.update()
-
-def especificacao1(current_language_index):
-    while True:
-        SPEC1_MOUSE_POS = pygame_menu.mouse.get_pos()
-
-        screen_resolution.fill("#FFF4EE")
-
-        if current_language_index == 0:
-
-            SPEC1_TEXT = get_font(45).render("Especificação 1", True, "Black")
-            SPEC1_RECT = SPEC1_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 3))
-            screen_resolution.blit(SPEC1_TEXT, SPEC1_RECT)
-
-            SPEC1_BACK = Button(image=None, pos=(screen_resolution.get_width() / 2, screen_resolution.get_height() * 0.9), 
-                                text_input="Voltar", font=get_font(75), base_color="Black", hovering_color="White")
-
-            SPEC1_BACK.changeColor(SPEC1_MOUSE_POS)
-            SPEC1_BACK.update(screen_resolution)
-
-        elif current_language_index == 1:
-
-            SPEC1_TEXT = get_font(45).render("Details 1", True, "Black")
-            SPEC1_RECT = SPEC1_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 3))
-            screen_resolution.blit(SPEC1_TEXT, SPEC1_RECT)
-
-            SPEC1_BACK = Button(image=None, pos=(screen_resolution.get_width() / 2, screen_resolution.get_height() * 0.9), 
-                                text_input="Back", font=get_font(75), base_color="Black", hovering_color="White")
-
-            SPEC1_BACK.changeColor(SPEC1_MOUSE_POS)
-            SPEC1_BACK.update(screen_resolution)
-
-        for event in pygame_menu.event.get():
-            if event.type == pygame_menu.QUIT:
-                pygame_menu.quit()
-                sys.exit()
-            if event.type == pygame_menu.MOUSEBUTTONDOWN:
-                if SPEC1_BACK.checkForInput(SPEC1_MOUSE_POS):
-                    options(current_language_index)
-
-        pygame_menu.display.update()
-
-def especificacao2(current_language_index):
-    while True:
-        SPEC2_MOUSE_POS = pygame_menu.mouse.get_pos()
-
-        screen_resolution.fill("#FFF4EE")
-
-        if current_language_index== 0:
-            SPEC2_TEXT = get_font(45).render("Especificação 2", True, "Black")
-            SPEC2_RECT = SPEC2_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 3))
-            screen_resolution.blit(SPEC2_TEXT, SPEC2_RECT)
-
-            SPEC2_BACK = Button(image=None, pos=(screen_resolution.get_width() / 2, screen_resolution.get_height() * 0.9), 
-                                text_input="Voltar", font=get_font(75), base_color="Black", hovering_color="White")
-
-            SPEC2_BACK.changeColor(SPEC2_MOUSE_POS)
-            SPEC2_BACK.update(screen_resolution)
-
-        elif current_language_index== 1:
-            SPEC2_TEXT = get_font(45).render("Details 2", True, "Black")
-            SPEC2_RECT = SPEC2_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 3))
-            screen_resolution.blit(SPEC2_TEXT, SPEC2_RECT)
-
-            SPEC2_BACK = Button(image=None, pos=(screen_resolution.get_width() / 2, screen_resolution.get_height() * 0.9), 
-                                text_input="Back", font=get_font(75), base_color="Black", hovering_color="White")
-
-            SPEC2_BACK.changeColor(SPEC2_MOUSE_POS)
-            SPEC2_BACK.update(screen_resolution)
-
-        for event in pygame_menu.event.get():
-            if event.type == pygame_menu.QUIT:
-                pygame_menu.quit()
-                sys.exit()
-            if event.type == pygame_menu.MOUSEBUTTONDOWN:
-                if SPEC2_BACK.checkForInput(SPEC2_MOUSE_POS):
-                    options(current_language_index)  
-
-        pygame_menu.display.update()
-
-def options(current_language_index):
-    labels1 = ['A', 'B', 'C', 'D', 'E']
-    values1 = np.random.randint(1, 100, size=len(labels1))
-
-    plt.figure(figsize=(3, 3.5))
-    plt.bar(labels1, values1, color='skyblue')
-    plt.xlabel('Categorias')
-    plt.ylabel('Valores')
-    plt.title('Exemplo de Gráfico de Barras')
-    plt.grid(True)
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.savefig('assets/grafico1.png')
-
-    labels2 = ['X', 'Y', 'Z', 'W']
-    values2 = np.random.randint(1, 100, size=len(labels2))
-
-    plt.figure(figsize=(3, 3.5))
-    plt.bar(labels2, values2, color='lightgreen')
-    plt.xlabel('Categorias')
-    plt.ylabel('Valores')
-    plt.title('Segundo Gráfico de Barras')
-    plt.grid(True)
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.savefig('assets/grafico2.png')
-
-    while True:
-        OPTIONS_MOUSE_POS = pygame_menu.mouse.get_pos()
-
-        screen_resolution.fill("#FFF4EE")
-
-        if (current_language_index == 0):
-            OPTIONS_TEXT = get_font(45).render("Métricas", True, "Black")
-            OPTIONS_RECT = OPTIONS_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 8))
-            screen_resolution.blit(OPTIONS_TEXT, OPTIONS_RECT)
-
-            OPTIONS_BACK = Button(image=None, pos=(screen_resolution.get_width() / 2, screen_resolution.get_height() * 0.9), 
-                            text_input="Voltar", font=get_font(75), base_color="Black", hovering_color="Green")
-
-            OPTIONS_BACK.changeColor(OPTIONS_MOUSE_POS)
-
-            OPTIONS_BACK.update(screen_resolution)
-
-        if (current_language_index == 1):
-            OPTIONS_TEXT = get_font(45).render("Details", True, "Black")
-            OPTIONS_RECT = OPTIONS_TEXT.get_rect(center=(screen_resolution.get_width() / 2, screen_resolution.get_height() / 8))
-            screen_resolution.blit(OPTIONS_TEXT, OPTIONS_RECT)
-
-            OPTIONS_BACK = Button(image=None, pos=(screen_resolution.get_width() / 2, screen_resolution.get_height() * 0.9), 
-                            text_input="Back", font=get_font(75), base_color="Black", hovering_color="Green")
-
-            OPTIONS_BACK.changeColor(OPTIONS_MOUSE_POS)
-
-            OPTIONS_BACK.update(screen_resolution)
-
-        grafico1_img = pygame_menu.image.load("assets/grafico1.png")
-        if grafico1_img.get_rect(topleft=(screen_resolution.get_width() * 0.15, screen_resolution.get_height() * 0.2)).collidepoint(OPTIONS_MOUSE_POS):
-            grafico1_img.fill((0, 255, 0, 128), special_flags=pygame_menu.BLEND_RGBA_MULT)
-
-        screen_resolution.blit(grafico1_img, (screen_resolution.get_width() * 0.15, screen_resolution.get_height() * 0.2))
-
-        grafico2_img = pygame_menu.image.load("assets/grafico2.png")
-        if grafico2_img.get_rect(topleft=(screen_resolution.get_width() * 0.6, screen_resolution.get_height() * 0.2)).collidepoint(OPTIONS_MOUSE_POS):
-            grafico2_img.fill((0, 255, 0, 128), special_flags=pygame_menu.BLEND_RGBA_MULT)
-
-        screen_resolution.blit(grafico2_img, (screen_resolution.get_width() * 0.6, screen_resolution.get_height() * 0.2))
-
-
-        for event in pygame_menu.event.get():
-            if event.type == pygame_menu.QUIT:
-                pygame_menu.quit()
-                sys.exit()
-            if event.type == pygame_menu.MOUSEBUTTONDOWN:
-                if OPTIONS_BACK.checkForInput(OPTIONS_MOUSE_POS):
-                    play(current_language_index)
-                if grafico1_img.get_rect(topleft=(screen_resolution.get_width() * 0.15, screen_resolution.get_height() * 0.2)).collidepoint(event.pos):
-                    especificacao1(current_language_index)
-                if grafico2_img.get_rect(topleft=(screen_resolution.get_width() * 0.6, screen_resolution.get_height() * 0.2)).collidepoint(event.pos):
-                    especificacao2(current_language_index)
-
-        pygame_menu.display.update()
+        pygame.display.update()
 
 
 if __name__ == "__main__":
@@ -849,4 +566,4 @@ if __name__ == "__main__":
     mic_thread.daemon = True
     mic_thread.start()
 
-    main_menu(current_language_index)
+    main_menu(current_language_index, current_resolution_index, Fullscreen)
