@@ -23,9 +23,10 @@ EDEN_EVENT = pygame.USEREVENT + 1
 loaded_model = models.load_model("model-teste")
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
-RATE = 16000
+RATE = 44100
 FRAMES_PER_BUFFER = 1024
 RATE_44100 = 44100
+DEVICE_INPUT_INDEX = 2
 
 load_dotenv()
 google_credentials = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
@@ -42,7 +43,7 @@ def save_audio_data_to_wav(data, filename):
         with wave.open(filename, 'wb') as audio_file:
             audio_file.setnchannels(1)  # Mono
             audio_file.setsampwidth(2)   # 16 bits
-            audio_file.setframerate(RATE)  # Exemplo de taxa de amostragem
+            audio_file.setframerate(RATE_44100)  # Exemplo de taxa de amostragem
             audio_file.writeframes(data)
         return filename
     except Exception as e:
@@ -60,7 +61,7 @@ def predict_mic(pygame_menu):
     p = pyaudio.PyAudio()
 
     try:
-        input_device_index = 1  # Alterar para o índice correto do seu dispositivo de entrada
+        input_device_index = DEVICE_INPUT_INDEX
         input_device_info = p.get_device_info_by_index(input_device_index)
         if not input_device_info['maxInputChannels'] > 0:
             print(f"Dispositivo de entrada {input_device_index} não está disponível.")
@@ -83,9 +84,9 @@ def predict_mic(pygame_menu):
                     data = stream.read(FRAMES_PER_BUFFER, exception_on_overflow=False)
                     audio_buffer.append(data)
 
-                    if len(audio_buffer) * FRAMES_PER_BUFFER >= RATE:
-                        audio_segment = b''.join(audio_buffer[:RATE // FRAMES_PER_BUFFER])
-                        audio_buffer = audio_buffer[RATE // FRAMES_PER_BUFFER:]
+                    if len(audio_buffer) * FRAMES_PER_BUFFER >= RATE_44100:
+                        audio_segment = b''.join(audio_buffer[:RATE_44100 // FRAMES_PER_BUFFER])
+                        audio_buffer = audio_buffer[RATE_44100 // FRAMES_PER_BUFFER:]
 
                         spec = preprocess_audiobuffer(np.frombuffer(audio_segment, dtype=np.int16))
                         if spec is None:
@@ -104,7 +105,7 @@ def predict_mic(pygame_menu):
 
                                 # Gravar áudio adicional para o comando "Eden"
                                 additional_audio = []
-                                for _ in range(int(4 * RATE / FRAMES_PER_BUFFER)):  # 4 segundos de áudio
+                                for _ in range(int(4 * RATE_44100 / FRAMES_PER_BUFFER)):  # 4 segundos de áudio
                                     data = stream.read(FRAMES_PER_BUFFER, exception_on_overflow=False)
                                     additional_audio.append(data)
 

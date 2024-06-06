@@ -6,8 +6,8 @@ import pyaudio, wave, os, time
 
 import pygame
 
-DEVICE_INPUT_INDEX = 1
-DEVICE_OUTPUT_INDEX = 2
+DEVICE_INPUT_INDEX = 2
+DEVICE_OUTPUT_INDEX = 0
 VOLUME = 1.0
 LUMINARIA = pygame.USEREVENT + 2
 LUZ = pygame.USEREVENT + 3
