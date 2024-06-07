@@ -2,8 +2,10 @@ import numpy as np
 from utils.constants import MQTT_TOPIC
 from mqtt.mqtt_controller import mqtt_publish
 from llm.llm import send_prompt
-import pyaudio, wave, os, time
-
+import pyaudio
+import wave
+import os
+import time
 import pygame
 
 DEVICE_INPUT_INDEX = 1
@@ -40,33 +42,33 @@ def play_audio(filename: str, device_id: int, volume: float = 1.0, stream=None):
         output_device_info = p.get_device_info_by_index(device_id)
         max_output_channels = output_device_info['maxOutputChannels']
         channels = min(wf.getnchannels(), max_output_channels)
+        format = p.get_format_from_width(wf.getsampwidth())
 
         # Configuração da stream de áudio com o dispositivo de saída especificado
-        stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
-                        channels=channels,  # Definir canais conforme a capacidade do dispositivo
-                        rate=wf.getframerate(),  # Usa a taxa de amostragem do arquivo
+        stream = p.open(format=format,
+                        channels=channels,
+                        rate=wf.getframerate(),
                         output=True,
-                        output_device_index=device_id)  # Adicionando o índice do dispositivo de saída
+                        output_device_index=device_id)
 
-        data = wf.readframes(1024)
+        buffer_size = 4096  # Ajuste o tamanho do buffer
+        data = wf.readframes(buffer_size)
 
         while data:
             # Aumentando o volume dos dados de áudio
             frames = np.frombuffer(data, dtype=np.int16)
             new_frames = (frames * volume).astype(np.int16)
             stream.write(new_frames.tobytes())
-            data = wf.readframes(1024)
+            data = wf.readframes(buffer_size)
     except Exception as e:
         print(f"Erro ao tocar o arquivo: {e}")
     finally:
-        if 'stream' in locals():
-            time.sleep(0.3)
+        if stream is not None:
             stream.stop_stream()
             stream.close()
-        if 'wf' in locals():
+        if wf is not None:
             wf.close()
         p.terminate()
-
 
 def handler(text, stream):
     print(text)

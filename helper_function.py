@@ -11,6 +11,7 @@ from google.cloud import speech
 import pygame
 import time
 import pyaudio
+import threading
 
 from utils.utils import get_local_ip
 from utils.constants import commands
@@ -23,14 +24,13 @@ EDEN_EVENT = pygame.USEREVENT + 1
 loaded_model = models.load_model("model-teste")
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
-RATE = 44100
-FRAMES_PER_BUFFER = 2048
-RATE_44100 = 44100
+RATE = 44100  # Manter a taxa de amostragem em 44100 Hz
+FRAMES_PER_BUFFER = 4096
 DEVICE_INPUT_INDEX = 1
 
 load_dotenv()
 google_credentials = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-api_key=os.getenv("OPENAI_API_KEY")
+api_key = os.getenv("OPENAI_API_KEY")
 client_openai = OpenAI(base_url="https://api.openai.com/v1", api_key=api_key)
 
 def save_predict_delete(data, filename):
@@ -42,8 +42,8 @@ def save_audio_data_to_wav(data, filename):
     try:
         with wave.open(filename, 'wb') as audio_file:
             audio_file.setnchannels(1)  # Mono
-            audio_file.setsampwidth(2)   # 16 bits
-            audio_file.setframerate(RATE_44100)  # Exemplo de taxa de amostragem
+            audio_file.setsampwidth(2)  # 16 bits
+            audio_file.setframerate(RATE)  # Taxa de amostragem ajustada
             audio_file.writeframes(data)
         return filename
     except Exception as e:
@@ -56,6 +56,16 @@ def initialize_stream(p, input_device_index):
                   input=True,
                   frames_per_buffer=FRAMES_PER_BUFFER,
                   input_device_index=input_device_index)
+
+def record_audio_thread(audio_buffer, stream):
+    try:
+        while True:
+            data = stream.read(FRAMES_PER_BUFFER, exception_on_overflow=False)
+            audio_buffer.append(data)
+            if len(audio_buffer) * FRAMES_PER_BUFFER >= RATE * 4:  # 4 segundos de áudio
+                break
+    except IOError as e:
+        print(f"Erro na leitura do stream de áudio: {e}")
 
 def predict_mic(pygame_menu):
     p = pyaudio.PyAudio()
@@ -81,12 +91,14 @@ def predict_mic(pygame_menu):
         while True:
             try:
                 if stream.is_active():
-                    data = stream.read(FRAMES_PER_BUFFER, exception_on_overflow=False)
-                    audio_buffer.append(data)
+                    audio_buffer = []
+                    record_thread = threading.Thread(target=record_audio_thread, args=(audio_buffer, stream))
+                    record_thread.start()
+                    record_thread.join()
 
-                    if len(audio_buffer) * FRAMES_PER_BUFFER >= RATE_44100:
-                        audio_segment = b''.join(audio_buffer[:RATE_44100 // FRAMES_PER_BUFFER])
-                        audio_buffer = audio_buffer[RATE_44100 // FRAMES_PER_BUFFER:]
+                    if len(audio_buffer) * FRAMES_PER_BUFFER >= RATE * 4:
+                        audio_segment = b''.join(audio_buffer[:RATE * 4 // FRAMES_PER_BUFFER])
+                        audio_buffer = audio_buffer[RATE * 4 // FRAMES_PER_BUFFER:]
 
                         spec = preprocess_audiobuffer(np.frombuffer(audio_segment, dtype=np.int16))
                         if spec is None:
@@ -95,7 +107,6 @@ def predict_mic(pygame_menu):
 
                         try:
                             prediction = loaded_model(spec)
-                            #print("Predição concluída")
                             label_pred = np.argmax(prediction, axis=1)
                             command = commands[label_pred[0]]
 
@@ -105,8 +116,8 @@ def predict_mic(pygame_menu):
 
                                 # Gravar áudio adicional para o comando "Eden"
                                 additional_audio = []
-                                for _ in range(int(4 * RATE_44100 / FRAMES_PER_BUFFER)):  # 4 segundos de áudio
-                                    data = stream.read((FRAMES_PER_BUFFER*4), exception_on_overflow=False)
+                                for _ in range(int(4 * RATE / FRAMES_PER_BUFFER)):  # 4 segundos de áudio
+                                    data = stream.read((FRAMES_PER_BUFFER), exception_on_overflow=False)
                                     additional_audio.append(data)
 
                                 audio = b''.join(additional_audio)
@@ -114,7 +125,7 @@ def predict_mic(pygame_menu):
                                 save_audio_data_to_wav(audio, filename)
                                 print(f"Segmento de áudio salvo em: {filename}")
                                 filename = "audio.wav"
-                                filename = save_audio_data_to_wav(audio, filename)
+                                save_audio_data_to_wav(audio, filename)
                                 stream.stop_stream()
                                 stream.close()
                                 text = transc(filename)
@@ -124,8 +135,7 @@ def predict_mic(pygame_menu):
                                     print("Erro ao transcrever o áudio")
                                     continue
 
-                                handler(text,stream)
-                                #audio_buffer = []  # Limpar o buffer de áudio
+                                handler(text, stream)
 
                         except Exception as e:
                             print(f"Erro ao processar segmento de áudio: {e}")
@@ -157,8 +167,6 @@ def delete_file(file):
         os.remove(file)
     except OSError as e:
         print(f"Erro ao excluir o arquivo {file}: {e}")
-
-
 
 def transcrever_audio(arquivo_wav):
     client = speech.SpeechClient.from_service_account_json(google_credentials)
@@ -208,18 +216,3 @@ def transc(audiofile):
         response_format="text"
     )
     return transcript
-
-
-#Input Device id  1  -  ahubhdmi: ahub_plat-i2s-hifi i2s-hifi-0 (hw:2,0)
-# Input Device id  2  -  USB PnP Sound Device: Audio (hw:3,0)
-# Input Device id  6  -  pulse
-# Input Device id  10  -  default
-# Output Device id  0  -  audiocodec: CDC PCM Codec-0 (hw:0,0)
-# Output Device id  1  -  ahubhdmi: ahub_plat-i2s-hifi i2s-hifi-0 (hw:2,0)
-# Output Device id  3  -  sysdefault
-# Output Device id  4  -  samplerate
-# Output Device id  5  -  speexrate
-# Output Device id  6  -  pulse
-# Output Device id  7  -  upmix
-# Output Device id  8  -  vdownmix
-# Output Device id  9  -  dmix
