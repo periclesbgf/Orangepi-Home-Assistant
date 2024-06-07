@@ -24,7 +24,7 @@ EDEN_EVENT = pygame.USEREVENT + 1
 loaded_model = models.load_model("model-teste")
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
-RATE = 44100  # Manter a taxa de amostragem em 44100 Hz
+RATE = 44100  # Mantém a taxa de amostragem em 44100 Hz
 FRAMES_PER_BUFFER = 4096
 DEVICE_INPUT_INDEX = 1
 
@@ -67,6 +67,14 @@ def record_audio_thread(audio_buffer, stream):
     except IOError as e:
         print(f"Erro na leitura do stream de áudio: {e}")
 
+def process_audio_buffer(audio_buffer, stream):
+    audio_segment = b''.join(audio_buffer)
+    spec = preprocess_audiobuffer(np.frombuffer(audio_segment, dtype=np.int16))
+    if spec is None:
+        print("Erro ao preprocessar o segmento de áudio.")
+        return None
+    return spec
+
 def predict_mic(pygame_menu):
     p = pyaudio.PyAudio()
 
@@ -91,18 +99,14 @@ def predict_mic(pygame_menu):
         while True:
             try:
                 if stream.is_active():
-                    audio_buffer = []
-                    record_thread = threading.Thread(target=record_audio_thread, args=(audio_buffer, stream))
-                    record_thread.start()
-                    record_thread.join()
+                    data = stream.read(FRAMES_PER_BUFFER, exception_on_overflow=False)
+                    audio_buffer.append(data)
 
-                    if len(audio_buffer) * FRAMES_PER_BUFFER >= RATE * 4:
-                        audio_segment = b''.join(audio_buffer[:RATE * 4 // FRAMES_PER_BUFFER])
-                        audio_buffer = audio_buffer[RATE * 4 // FRAMES_PER_BUFFER:]
+                    if len(audio_buffer) * FRAMES_PER_BUFFER >= RATE:
+                        spec = process_audio_buffer(audio_buffer, stream)
+                        audio_buffer = []  # Limpar o buffer de áudio após processamento
 
-                        spec = preprocess_audiobuffer(np.frombuffer(audio_segment, dtype=np.int16))
                         if spec is None:
-                            print("Erro ao preprocessar o segmento de áudio. Continuando com o próximo segmento.")
                             continue
 
                         try:
@@ -126,10 +130,7 @@ def predict_mic(pygame_menu):
                                 print(f"Segmento de áudio salvo em: {filename}")
                                 filename = "audio.wav"
                                 save_audio_data_to_wav(audio, filename)
-                                stream.stop_stream()
-                                stream.close()
                                 text = transc(filename)
-                                stream = initialize_stream(p, input_device_index)
 
                                 if text == "Não foi possível transcrever o áudio" or text == "":
                                     print("Erro ao transcrever o áudio")
@@ -192,7 +193,6 @@ def transcrever_audio(arquivo_wav):
         return ""
 
 def text_to_speech_wav(text, lang='pt-BR'):
-
     # Solicita a síntese de fala
     response = openai.Audio.create(
         model="tts",
