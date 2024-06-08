@@ -22,7 +22,6 @@ temp_path = speech_file_path.with_suffix('.mp3')
 with open(temp_path, 'wb') as f:
     f.write(response.content)
 
-# Converte o arquivo de mp3 para wav
 sound = AudioSegment.from_mp3(temp_path)
 sound.export(speech_file_path, format="wav", parameters=["-ar", str(44100)])
 print("Resposta convertida para áudio")

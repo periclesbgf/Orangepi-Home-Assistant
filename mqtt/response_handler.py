@@ -38,24 +38,23 @@ def play_audio(filename: str, device_id: int, volume: float = 1.0, stream=None):
     p = pyaudio.PyAudio()
 
     try:
-        # Verificar o número de canais do dispositivo de saída
         output_device_info = p.get_device_info_by_index(device_id)
         max_output_channels = output_device_info['maxOutputChannels']
         channels = min(wf.getnchannels(), max_output_channels)
         format = p.get_format_from_width(wf.getsampwidth())
 
-        # Configuração da stream de áudio com o dispositivo de saída especificado
+        buffer_size = 4096
+
         stream = p.open(format=format,
                         channels=channels,
                         rate=wf.getframerate(),
                         output=True,
-                        output_device_index=device_id)
+                        output_device_index=device_id,
+                        frames_per_buffer=buffer_size)
 
-        buffer_size = 4096  # Ajuste o tamanho do buffer
         data = wf.readframes(buffer_size)
 
         while data:
-            # Aumentando o volume dos dados de áudio
             frames = np.frombuffer(data, dtype=np.int16)
             new_frames = (frames * volume).astype(np.int16)
             stream.write(new_frames.tobytes())
@@ -124,5 +123,4 @@ def handler(text, stream):
     elif text_lower in ["desculpe, não entendi.", "desculpe, não entendi", "não entendi", "não entendi.", "desculpe não entendi."]:
         play_audio("llm/desculpe_melhor_ainda.wav", DEVICE_OUTPUT_INDEX, VOLUME, stream=stream)
     else:
-        print("Entrei no ultimo if")
         play_audio(filename=filepath, device_id=DEVICE_OUTPUT_INDEX, volume=VOLUME, stream=stream)

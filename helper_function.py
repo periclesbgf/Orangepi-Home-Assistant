@@ -21,10 +21,10 @@ from mqtt.response_handler import handler
 
 EDEN_EVENT = pygame.USEREVENT + 1
 
-loaded_model = models.load_model("model-teste")
+loaded_model = models.load_model("model-teste-2")
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
-RATE = 44100  # Mantém a taxa de amostragem em 44100 Hz
+RATE = 44100
 FRAMES_PER_BUFFER = 4096
 DEVICE_INPUT_INDEX = 1
 
@@ -41,9 +41,9 @@ def save_predict_delete(data, filename):
 def save_audio_data_to_wav(data, filename):
     try:
         with wave.open(filename, 'wb') as audio_file:
-            audio_file.setnchannels(1)  # Mono
-            audio_file.setsampwidth(2)  # 16 bits
-            audio_file.setframerate(RATE)  # Taxa de amostragem ajustada
+            audio_file.setnchannels(1)
+            audio_file.setsampwidth(2)
+            audio_file.setframerate(RATE)
             audio_file.writeframes(data)
         return filename
     except Exception as e:
@@ -62,7 +62,7 @@ def record_audio_thread(audio_buffer, stream):
         while True:
             data = stream.read(FRAMES_PER_BUFFER, exception_on_overflow=False)
             audio_buffer.append(data)
-            if len(audio_buffer) * FRAMES_PER_BUFFER >= RATE * 4:  # 4 segundos de áudio
+            if len(audio_buffer) * FRAMES_PER_BUFFER >= RATE * 4:
                 break
     except IOError as e:
         print(f"Erro na leitura do stream de áudio: {e}")
@@ -104,7 +104,7 @@ def predict_mic(pygame_menu):
 
                     if len(audio_buffer) * FRAMES_PER_BUFFER >= RATE:
                         spec = process_audio_buffer(audio_buffer, stream)
-                        audio_buffer = []  # Limpar o buffer de áudio após processamento
+                        audio_buffer = []
 
                         if spec is None:
                             continue
@@ -118,9 +118,8 @@ def predict_mic(pygame_menu):
                                 print("Eden ativado")
                                 pygame.event.post(pygame.event.Event(EDEN_EVENT))
 
-                                # Gravar áudio adicional para o comando "Eden"
                                 additional_audio = []
-                                for _ in range(int(4 * RATE / FRAMES_PER_BUFFER)):  # 4 segundos de áudio
+                                for _ in range(int(4 * RATE / FRAMES_PER_BUFFER)):
                                     data = stream.read((FRAMES_PER_BUFFER), exception_on_overflow=False)
                                     additional_audio.append(data)
 
@@ -153,7 +152,7 @@ def predict_mic(pygame_menu):
                     stream.stop_stream()
                     stream.close()
                 stream = initialize_stream(p, input_device_index)
-                audio_buffer = []  # Limpar o buffer de áudio após erro de overflow
+                audio_buffer = []
 
     except Exception as e:
         print(f"Erro na captura de áudio: {e}")
